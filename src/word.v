@@ -16,6 +16,8 @@ Local Open Scope nat_scope.
 
 Import GRing.Theory Num.Theory.
 
+Local Notation "m ^ n" := (expn m n) : nat_scope.
+
 (* -------------------------------------------------------------------- *)
 Parameter (nbits : nat).
 
@@ -41,7 +43,7 @@ Canonical word_eqType := Eval hnf in EqType word word_eqMixin.
 Notation wbits := (nbits.-tuple bool).
 
 Definition wbit (w : word) (n : nat) : bool :=
-  odd (Z.to_nat w %/ n).
+  odd (Z.to_nat w %/ (2 ^ n)).
 
 Definition w2t (w : word) : wbits :=
   [tuple wbit w n | n < nbits].
@@ -49,11 +51,13 @@ Definition w2t (w : word) : wbits :=
 Definition t2w_def (t : wbits) : Z :=
   (\sum_(i < nbits) 2%:R^+i * (tnth t i)%:R)%R.
 
+Local Lemma ge0_bit n b : (0 <= 2%:R ^+ n * b%:R :> Z)%R.
+Proof. by rewrite mulr_ge0 // ?exprn_ge0 // ler0n. Qed.
+
 Local Lemma t2w_proof (t : wbits) :
   (0 <= t2w_def t)%R && (t2w_def t < modulus)%R.
 Proof.
-rewrite /t2w_def sumr_ge0 /= => [i _|].
-  by rewrite mulr_ge0 ?exprn_ge0 // ler0n.
+rewrite /t2w_def sumr_ge0 /= => [i _|]; first by rewrite ge0_bit.
 rewrite /t2w_def modulusE; elim: nbits t => [|n ih] t.
   by rewrite big_ord0 ltr01.
 rewrite big_ord_recr /= exprS mulr_natl [_ ^+ _ *+ 2]mulr2n.
@@ -65,3 +69,22 @@ by move=> i _; rewrite tnth_map (tnth_nth false) tnth_ord_tuple.
 Qed.
 
 Definition t2w (t : wbits) : word := mkWord (t2w_proof t).
+
+(* -------------------------------------------------------------------- *)
+Lemma Ztonat_bit n b :
+  Z.to_nat (2%:R ^+ n * b%:R) = (2 ^ n * b)%nat.
+Proof.
+rewrite Z2Nat.z2nM ?multE ?(rwP leZP) ?(exprn_ge0,ler0n) //.
+by rewrite Z2Nat.z2nX // !Z2Nat.z2nr.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma Ztonat_t2w w :
+  Z.to_nat (t2w_def w) = \sum_(i < nbits) 2 ^ i * tnth w i.
+Proof.
+rewrite /t2w_def Z2Nat.z2n_sum => /= [i _|]; first by apply/ge0_bit.
+by apply/eq_bigr=> i _; rewrite Ztonat_bit.
+Qed.
+
+
+

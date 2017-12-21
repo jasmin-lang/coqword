@@ -10,7 +10,9 @@ Local Open Scope ring_scope.
 Local Open Scope nat_scope.
 Local Open Scope Z_scope.
 
-Import GRing.Theory.
+Import GRing.Theory Num.Theory.
+
+Local Notation "m ^ n" := (expn m n) : nat_scope.
 
 (* -------------------------------------------------------------------- *)
 Definition int_to_Z (z : int) : Z :=
@@ -87,45 +89,45 @@ Canonical Z_iDomain :=
   Eval hnf in IdomainType Z ZUnitRing.idomain_axiomZ.
 
 (* -------------------------------------------------------------------- *)
-Lemma lezP x y : reflect (x <= y) (x <=? y).
+Lemma leZP x y : reflect (x <= y) (x <=? y).
 Proof. by apply: (iffP idP) => /Z.leb_le. Qed.
 
-Lemma ltzP x y : reflect (x < y) (x <? y).
+Lemma ltZP x y : reflect (x < y) (x <? y).
 Proof. by apply: (iffP idP) => /Z.ltb_lt. Qed.
 
-Definition ltezP := (
-  (fun x y => rwP (lezP x y)),
-  (fun x y => rwP (ltzP x y))).
+Definition lteZP := (
+  (fun x y => rwP (leZP x y)),
+  (fun x y => rwP (ltZP x y))).
 
 (* --------------------------------------------------------------------- *)
 Module ZNumDomain.
 Lemma leZ_norm_add (x y : Z) :
   Z.abs (x + y)%R <=? (Z.abs x + Z.abs y)%R.
-Proof. by rewrite -!ltezP; apply/Z.abs_triangle. Qed.
+Proof. by rewrite -!lteZP; apply/Z.abs_triangle. Qed.
 
 Lemma ltZ_add (x y : Z) : 
   0 <? x -> 0 <? y -> 0 <? (x + y)%R.
-Proof. by rewrite -!ltezP; apply/Z.add_pos_pos. Qed.
+Proof. by rewrite -!lteZP; apply/Z.add_pos_pos. Qed.
 
 Lemma eq0_normZ (x : Z) : Z.abs x = 0 -> x = 0.
 Proof. by move/Z.abs_0_iff. Qed.
 
 Lemma leZ_total (x y : Z) : (x <=? y) || (y <=? x).
-Proof. by apply/orP; rewrite -!ltezP; apply/Z.le_ge_cases. Qed.
+Proof. by apply/orP; rewrite -!lteZP; apply/Z.le_ge_cases. Qed.
 
 Lemma normZM : {morph Z.abs : x y / (x * y)%R}.
 Proof. by move=> x y; rewrite Z.abs_mul. Qed.
 
 Lemma leZ_def (x y : Z) : (x <=? y) = (Z.abs (y - x)%R == (y - x)%R).
 Proof.
-apply/idP/eqP; rewrite -!ltezP.
+apply/idP/eqP; rewrite -!lteZP.
 * by move=> h; rewrite Z.abs_eq // Z.le_0_sub.
 * by move/Z.abs_eq_iff; rewrite Z.le_0_sub.
 Qed.
 
 Lemma ltZ_def (x y : Z) : (x <? y) = (y != x) && (x <=? y).
 Proof.
-apply/idP/andP; rewrite -!ltezP.
+apply/idP/andP; rewrite -!lteZP.
 * by move/Z.le_neq => [? /eqP]; rewrite eq_sym.
 * by rewrite eq_sym; case=> /eqP ? ?; apply/Z.le_neq.
 Qed.
@@ -137,3 +139,70 @@ End ZNumDomain.
 
 Canonical Z_numType := Eval hnf in NumDomainType Z ZNumDomain.Z_numMixin.
 Canonical Z_realDomainType := RealDomainType Z (ZNumDomain.leZ_total 0).
+
+(* -------------------------------------------------------------------- *)
+Lemma ltzE {z1 z2 : Z} : (z1 <? z2)%Z = (z1 < z2)%R.
+Proof. by []. Qed.
+
+Lemma ltzP {z1 z2 : Z} : reflect (z1 < z2)%Z (z1 < z2)%R.
+Proof. by rewrite -ltzE; apply: (iffP idP) => /Z.ltb_lt. Qed.
+
+Lemma lezE {z1 z2 : Z} : (z1 <=? z2)%Z = (z1 <= z2)%R.
+Proof. by []. Qed.
+
+Lemma lezP {z1 z2 : Z} : reflect (z1 <= z2)%Z (z1 <= z2)%R.
+Proof. by rewrite -lezE; apply: (iffP idP) => /Z.leb_le. Qed.
+
+(* ==================================================================== *)
+Module Z2Nat.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2n0 : Z.to_nat 0 = 0%nat.
+Proof. by []. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2nD z1 z2 : (0 <= z1)%R -> (0 <= z2)%R ->
+  Z.to_nat (z1 + z2) = (Z.to_nat z1 + Z.to_nat z2)%nat.
+Proof.
+by move=> ge0_z1 ge0_z2; apply/Z2Nat.inj_add; apply/lezP.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2nM z1 z2 : (0 <= z1)%R -> (0 <= z2)%R ->
+  Z.to_nat (z1 * z2) = (Z.to_nat z1 * Z.to_nat z2)%nat.
+Proof.
+by move=> ge0_z1 ge0_z2; apply/Z2Nat.inj_mul; apply/lezP.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2n_sum {T : Type} (P : ssrbool.pred T) (F : T -> Z) r :
+     (forall x, P x -> (0 <= F x)%R)
+  -> Z.to_nat (\sum_(x <- r | P x) F x)%R =
+       \sum_(x <- r | P x) Z.to_nat (F x).
+Proof.
+move=> ge0_F; elim: r => [|x r ih]; first by rewrite !big_nil z2n0.
+rewrite !big_cons; case: ifPn => // Px.
+by rewrite z2nD ?ih //; [apply/ge0_F | apply/sumr_ge0].
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2nX (z : Z) n :
+  (0 <= z)%R -> Z.to_nat (z ^+ n)%R = (Z.to_nat z ^ n)%nat.
+Proof.
+move=> ge0_z; elim: n => // n ih; rewrite exprS.
+by rewrite z2nM ?exprn_ge0 // ih expnS.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2n_natmul (z : Z) n :
+  (0 <= z)%R -> Z.to_nat (z *+ n) = (Z.to_nat z * n)%nat.
+Proof.
+move=> ge0_z; elim: n => // n ih; rewrite mulrS.
+by rewrite z2nD ?mulrn_wge0 // ih mulnS.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma z2nr n : Z.to_nat (n%:R) = n.
+Proof. by rewrite z2n_natmul // mul1n. Qed.
+
+End Z2Nat.
