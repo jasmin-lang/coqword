@@ -15,6 +15,24 @@ Import GRing.Theory Num.Theory.
 Local Notation "m ^ n" := (expn m n) : nat_scope.
 
 (* -------------------------------------------------------------------- *)
+Section PosInd.
+Context (P : positive -> Prop).
+
+Lemma posind : P 1%positive -> (forall p, P p -> P (p + 1)) -> forall p, P p.
+Proof.
+move=> h1 ih p; rewrite -[p]Pos2Nat.id; elim: (Pos.to_nat p) => //.
+by move=> [|n] // ihSn; rewrite -addn1 Nat2Pos.inj_add //; apply/ih.
+Qed.
+End PosInd.
+
+(* -------------------------------------------------------------------- *)
+Lemma addP m n : (m + n)%coq_nat = (m + n)%nat.
+Proof. by []. Qed.
+
+Lemma mulP m n : (m * n)%coq_nat = (m * n)%nat.
+Proof. by []. Qed.
+
+(* -------------------------------------------------------------------- *)
 Definition int_to_Z (z : int) : Z :=
   match z with
   | Posz n =>  (Z.of_nat n   )
@@ -152,6 +170,60 @@ Proof. by []. Qed.
 
 Lemma lezP {z1 z2 : Z} : reflect (z1 <= z2)%Z (z1 <= z2)%R.
 Proof. by rewrite -lezE; apply: (iffP idP) => /Z.leb_le. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma addZE (x y : Z) : (x + y)%Z = (x + y)%R.
+Proof. by []. Qed.
+
+Lemma oppZE (x : Z) : (- x)%Z = (- x)%R.
+Proof. by []. Qed.
+
+Lemma subZE (x y : Z) : (x - y)%Z = (x - y)%R.
+Proof. by []. Qed.
+
+Lemma mulZE (x y : Z) : (x * y)%Z = (x * y)%R.
+Proof. by []. Qed.
+
+(* ==================================================================== *)
+Lemma Z_to_int_is_additive : additive Z_to_int.
+Proof.
+have h x y: Z_to_int (Z.pos_sub x y) = ((Pos.to_nat x)%:Z - (Pos.to_nat y)%:Z)%R.
++ rewrite Z.pos_sub_spec; case E: (_ ?= _)%positive => /=.
+  - by move/Pos.compare_eq: E => ->; rewrite addrN.
+  - move/Pos.compare_lt_iff: E => E; rewrite Pos2Nat.inj_sub //.
+    rewrite -subzn ?opprB //; apply/leP.
+    by apply/Pos2Nat.inj_le/Pos.lt_le_incl.
+  - move/Pos.compare_gt_iff: E => E; rewrite Pos2Nat.inj_sub //.
+    rewrite -subzn ?opprB //; apply/leP.
+    by apply/Pos2Nat.inj_le/Pos.lt_le_incl.
+case=> [|x|x] [|y|y] //=.
++ by rewrite sub0r.
++ by rewrite opprK add0r.
++ by rewrite subr0.
++ by apply/h.
++ by rewrite opprK -PoszD Pos2Nat.inj_add.
++ by rewrite subr0.
++ by rewrite -opprD -PoszD Pos2Nat.inj_add.
++ by rewrite opprK [RHS]addrC; apply/h.
+Qed.
+
+Canonical Z_to_int_additive := Additive Z_to_int_is_additive.
+
+(* -------------------------------------------------------------------- *)
+Lemma Z_to_int_is_rmorphism : rmorphism Z_to_int.
+Proof.
+do 2? split => //=; first by apply/Z_to_int_is_additive.
+case=> [|x|x] y /=; first by rewrite mul0r.
+- elim/posind: x => [|p ih]; first by rewrite !mul1r.
+  rewrite Pos2Z.inj_add addZE mulrDl mul1r raddfD /=.
+  by rewrite ih Pos2Nat.inj_add /= addP PoszD mulrDl mul1r.
+- elim/posind: x => [|p ih]; first by rewrite !mulN1r raddfN.
+  rewrite -Pos2Z.add_neg_neg addZE mulrDl mulN1r.
+  rewrite raddfB /= ih Pos2Nat.inj_add addP PoszD.
+  by rewrite opprD mulrDl mulN1r.
+Qed.
+
+Canonical Z_to_int_rmorphism := RMorphism Z_to_int_is_rmorphism.
 
 (* ==================================================================== *)
 Module Z2Nat.
