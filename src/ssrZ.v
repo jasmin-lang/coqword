@@ -14,6 +14,8 @@ Import GRing.Theory Num.Theory.
 
 Local Notation "m ^ n" := (expn m n) : nat_scope.
 
+Let rmorph := (rmorphM, rmorphB, rmorphD, rmorphN, rmorph1, rmorph0).
+
 (* -------------------------------------------------------------------- *)
 Section PosInd.
 Context (P : positive -> Prop).
@@ -52,6 +54,9 @@ case=> [//|p|p] /=; first by rewrite positive_nat_Z.
 have /ltP := Pos2Nat.is_pos p; case E: Pos.to_nat => [|n] // _.
 by rewrite -NegzE /= (SuccNat2Pos.inv _ _ E).
 Qed.
+
+Lemma int_to_ZK : cancel int_to_Z Z_to_int.
+Proof. by case=> [[|n]|n] //=; rewrite Pos.of_nat_succ Nat2Pos.id. Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma ZeqbP x y : reflect (x = y) (Z.eqb x y).
@@ -224,6 +229,73 @@ case=> [|x|x] y /=; first by rewrite mul0r.
 Qed.
 
 Canonical Z_to_int_rmorphism := RMorphism Z_to_int_is_rmorphism.
+
+(* -------------------------------------------------------------------- *)
+Lemma int_to_Z_is_additive : additive int_to_Z.
+Proof. by apply/(can2_additive _ int_to_ZK)/Z_to_intK. Qed.
+
+Canonical int_to_Z_additive := Additive int_to_Z_is_additive.
+
+(* -------------------------------------------------------------------- *)
+Lemma int_to_Z_is_rmorphism : rmorphism int_to_Z.
+Proof. by apply/(can2_rmorphism _ int_to_ZK)/Z_to_intK. Qed.
+
+Canonical int_to_Z_rmorphism := RMorphism int_to_Z_is_rmorphism.
+
+(* -------------------------------------------------------------------- *)
+Coercion int_to_Z : int >-> Z.
+Coercion Z_to_int : Z >-> int.
+
+(* -------------------------------------------------------------------- *)
+Delimit Scope int_scope with I.
+
+Lemma leZE {x y : Z} : reflect (x <= y) (x <= y :> int).
+Proof.
+have h z: exists n : nat, Pos.to_nat z == n.+1.
+- by case: (Pos2Nat.is_succ z)=> zS ->; exists zS.
+case: x y => [|x|x] [|y|y] //=; try by constructor.
++ rewrite oppr_ge0 lez0_nat gtn_eqF; first by constructor.
+  by apply/ltP/Pos2Nat.is_pos.
++ rewrite lez0_nat gtn_eqF; first by constructor.
+  by apply/ltP/Pos2Nat.is_pos.
++ by rewrite lez_nat; apply: (iffP leP) => /Pos2Nat.inj_le.
++ by rewrite (eqP (xchooseP (h y))); constructor.
++ by rewrite oppr_le0; constructor.
++ by rewrite (eqP (xchooseP (h x))); constructor.
++ rewrite ler_oppr opprK; apply: (iffP idP).
+  - by move/leP/Pos2Nat.inj_le/Pos2Z.neg_le_neg.
+  rewrite -!Pos2Z.opp_pos -Z.opp_le_mono => {h}h.
+  by rewrite lez_nat -(rwP leP) -Pos2Nat.inj_le.
+Qed.
+
+Lemma ltZE (x y : Z) : reflect (x < y) (x < y :> int).
+Proof. apply: (iffP idP).
++ rewrite ltr_neqAle -(rwP andP) -(rwP leZE) => -[neq lt].
+  apply/Z.le_neq; split=> // /(congr1 Z_to_int).
+  by move/eqP; rewrite (negbTE neq).
++ move/Z.le_neq => [le neq]; rewrite ltr_neqAle; apply/andP.
+  rewrite -(rwP leZE); split=> //; apply/eqP.
+  by move/(congr1 int_to_Z); rewrite !Z_to_intK.
+Qed.
+
+Definition lteZE :=
+  (fun x y => rwP (@leZE x y), fun x y => rwP (@ltZE x y)).
+
+Lemma divZE (a b : Z) : (0 < b)%R -> a / b = (a %/ b)%I.
+Proof.
+move/ltzP/(@ltZE 0) => h; have /(congr1 int_to_Z) := divz_eq a b.
+rewrite mulrC !rmorph /= !Z_to_intK => /Zdiv_unique -> //.
+rewrite !lteZE !rmorph /= !int_to_ZK subr_ge0 ltr_subl_addr.
+rewrite (rwP andP) lez_floor ?gtr_eqF //=.
+by rewrite addrC -[X in (_ + X)%R]mul1r -mulrDl ltz_ceil.
+Qed.
+
+Lemma modZE (a b : Z) : (0 < b)%R -> a mod b = (a %% b)%I.
+Proof.
+move=> gt0_b; rewrite /modz Zmod_eq_full; last first.
++ by apply/eqP; rewrite gtr_eqF.
++ by rewrite rmorphB !rmorphM /= !Z_to_intK divZE.
+Qed.
 
 (* ==================================================================== *)
 Module Z2Nat.
