@@ -189,6 +189,12 @@ Proof. by []. Qed.
 Lemma mulZE (x y : Z) : (x * y)%Z = (x * y)%R.
 Proof. by []. Qed.
 
+Lemma expZE (x : Z) n : (x ^ Z.of_nat n)%Z = x ^+ n.
+Proof.
+elim: n => // n ih; rewrite exprS Nat2Z.inj_succ.
+by rewrite Z.pow_succ_r ?ih //; apply/Nat2Z.is_nonneg.
+Qed.
+
 (* ==================================================================== *)
 Lemma Z_to_int_is_additive : additive Z_to_int.
 Proof.
@@ -350,3 +356,21 @@ Lemma z2nr n : Z.to_nat (n%:R) = n.
 Proof. by rewrite z2n_natmul // mul1n. Qed.
 
 End Z2Nat.
+
+(* ==================================================================== *)
+Module Nat2Z.
+Lemma n2z0 : Z.of_nat 0 = 0%R.
+Proof. by []. Qed.
+
+Lemma n2z1 : Z.of_nat 1 = 1%R.
+Proof. by []. Qed.
+
+Lemma n2zD n m : Z.of_nat (n + m) = (Z.of_nat n + Z.of_nat m)%R.
+Proof. by rewrite -addZE Nat2Z.inj_add. Qed.
+
+Lemma n2zM n m : Z.of_nat (n * m) = (Z.of_nat n * Z.of_nat m)%R.
+Proof. by rewrite -mulZE Nat2Z.inj_mul. Qed.
+
+Lemma n2zX n m : Z.of_nat (n ^ m) = (Z.of_nat n ^+ m)%R.
+Proof. by elim: m => // m ih; rewrite exprS -ih -n2zM -expnS. Qed.
+End Nat2Z.
