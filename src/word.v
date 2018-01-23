@@ -1,5 +1,5 @@
 (* -------------------------------------------------------------------- *)
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_ssreflect all_algebra zmodp.
 (* ------- *) Require Import Arith ZArith Omega ssrZ.
 
 Set Implicit Arguments.
