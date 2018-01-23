@@ -249,6 +249,10 @@ Proof. by apply/(can2_rmorphism _ int_to_ZK)/Z_to_intK. Qed.
 Canonical int_to_Z_rmorphism := RMorphism int_to_Z_is_rmorphism.
 
 (* -------------------------------------------------------------------- *)
+Lemma Z_to_int_of_natE k : Z_to_int (Z.of_nat k) = k%:Z.
+Proof. by apply/(can_inj int_to_ZK); rewrite Z_to_intK. Qed.
+
+(* -------------------------------------------------------------------- *)
 Coercion int_to_Z : int >-> Z.
 Coercion Z_to_int : Z >-> int.
 
@@ -301,6 +305,14 @@ Proof.
 move=> gt0_b; rewrite /modz Zmod_eq_full; last first.
 + by apply/eqP; rewrite gtr_eqF.
 + by rewrite rmorphB !rmorphM /= !Z_to_intK divZE.
+Qed.
+
+Lemma modnZE (a b : nat) :
+  b != 0%N -> Z.of_nat (a %% b) = (Z.of_nat a mod Z.of_nat b)%Z.
+Proof.
+move=> nz_b; apply/(can_inj Z_to_intK); rewrite Z_to_int_of_natE.
+rewrite -modz_nat modZE; last by case: b nz_b.
+by rewrite int_to_ZK !Z_to_int_of_natE.
 Qed.
 
 (* ==================================================================== *)
@@ -367,6 +379,12 @@ Proof. by []. Qed.
 
 Lemma n2zD n m : Z.of_nat (n + m) = (Z.of_nat n + Z.of_nat m)%R.
 Proof. by rewrite -addZE Nat2Z.inj_add. Qed.
+
+Lemma n2zB n m : (m <= n)%nat ->
+  Z.of_nat (n - m) = (Z.of_nat n - Z.of_nat m)%R.
+Proof.
+by move=> le; rewrite -subZE Nat2Z.inj_sub //; apply/leP.
+Qed.
 
 Lemma n2zM n m : Z.of_nat (n * m) = (Z.of_nat n * Z.of_nat m)%R.
 Proof. by rewrite -mulZE Nat2Z.inj_mul. Qed.

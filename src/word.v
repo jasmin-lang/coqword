@@ -37,6 +37,15 @@ rewrite modulusE; elim: nbits => [|n ih].
 + by rewrite expr0. + by rewrite exprS mulr_gt0.
 Qed.
 
+Lemma Ztonat_modulus : Z.to_nat modulus = 2 ^ nbits.
+Proof. by rewrite modulusE Z2Nat.z2nX. Qed.
+
+Lemma Zofnat_modulus : modulus = Z.of_nat (2 ^ nbits).
+Proof. by rewrite -Ztonat_modulus Z2Nat.id. Qed.
+
+Lemma prednK_modulus n : (2 ^ n).-1.+1 = 2 ^ n.
+Proof. by rewrite prednK // expn_gt0. Qed.
+
 (* -------------------------------------------------------------------- *)
 Notation isword z := (0 <= z < modulus)%R.
 
@@ -93,8 +102,38 @@ by rewrite !(rwP lezP, rwP ltzP) (rwP andP) urepr_isword.
 Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma kwordK (z : Z) : urepr (mkword z) = (z mod modulus n)%Z.
+Lemma mkwordK (z : Z) : urepr (mkword z) = (z mod modulus n)%Z.
 Proof. by []. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma isword_ofnatZP (k : nat) :
+  reflect (0 <= Z.of_nat k < modulus n)%Z (k < 2 ^ n).
+Proof. apply: (iffP idP) => lt.
++ split; first by apply/Nat2Z.is_nonneg.
+  by move/ltP/Nat2Z.inj_lt: lt; rewrite -Ztonat_modulus Z2Nat.id.
++ case: lt => [_ lt]; apply/ltP/Nat2Z.inj_lt.
+  by rewrite -Ztonat_modulus Z2Nat.id.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma isword_tonatZP (k : Z) :
+  (0 <= k < modulus n)%Z -> Z.to_nat k < 2 ^ n.
+Proof.
+case=> le lt; apply/ltP/Nat2Z.inj_lt.
+by rewrite Z2Nat.id // -Zofnat_modulus.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma isword_tonatZWP (k : Z) :
+  (0 <= k < modulus n)%Z -> Z.to_nat k <= 2 ^ n.
+Proof. by move=> h; apply/ltnW/isword_tonatZP. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma iswordZP (k : Z) :
+  reflect (0 <= k < modulus n)%Z (isword k).
+Proof.
+by apply: (iffP idP); rewrite !(rwP ltzP, rwP lezP) (rwP andP).
+Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma isword0 : isword 0%Z.
@@ -110,6 +149,11 @@ Lemma isword_word (w : n.-word) : isword (w : Z).
 Proof. by apply/(valP w). Qed.
 
 Hint Resolve 0 isword_word.
+
+(* -------------------------------------------------------------------- *)
+Lemma word_eqE (w1 w2 : n.-word) :
+  (w1 == w2) = (urepr w1 == urepr w2)%Z.
+Proof. by rewrite -val_eqE. Qed.
 
 (* -------------------------------------------------------------------- *)
 Definition add_word (w1 w2 : n.-word) :=
@@ -146,12 +190,79 @@ Lemma zmod_of_wordK : cancel zmod_of_word word_of_zmod.
 Proof.
 rewrite /zmod_of_word /word_of_zmod => -[w /= h].
 rewrite (rwP eqP) -val_eqE /= modn_small.
-+ rewrite prednK ?expn_gt0 // -(rwP ltP) Nat2Z.inj_lt.
++ rewrite prednK_modulus -(rwP ltP) Nat2Z.inj_lt.
   rewrite Z2Nat.id //; case/andP: h => _ /ltzP.
   by rewrite /modulus two_power_nat_equiv Nat2Z.n2zX expZE.
 + rewrite Z2Nat.id; first by case/andP: h => /lezP.
   by rewrite Zmod_small // !(rwP lezP, rwP ltzP) (rwP andP).
 Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma word_of_zmodK : cancel word_of_zmod zmod_of_word.
+Proof.
+rewrite /zmod_of_word /word_of_zmod => -[k /= lt].
+apply/eqP; rewrite -val_eqE /= prednK_modulus.
+rewrite prednK_modulus in lt; rewrite Zmod_small.
++ by apply/isword_ofnatZP.
++ by rewrite modn_small Nat2Z.id.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma word0_zmodE : word0 = word_of_zmod 0%R.
+Proof. by rewrite (rwP eqP) word_eqE. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma add_word_zmodE (x y : n.-word) :
+  add_word x y = word_of_zmod (zmod_of_word x + zmod_of_word y)%R.
+Proof.
+rewrite (rwP eqP) word_eqE /=; case: x y => [x hx] [y hy].
+rewrite /add_word /urepr /= prednK_modulus; apply/eqP.
+rewrite [Z.to_nat x %% _]modn_small 1?[Z.to_nat y %% _]modn_small.
++ by apply/isword_tonatZP/iswordZP.
++ by apply/isword_tonatZP/iswordZP.
+rewrite modnZE ?expn_eq0 // -Zofnat_modulus.
+by rewrite Zmod_mod Nat2Z.n2zD !Z2Nat.id.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma opp_word_zmodE (x : n.-word) :
+  opp_word x = word_of_zmod (- zmod_of_word x)%R.
+Proof.
+rewrite (rwP eqP) word_eqE /=; case: x => [x hx].
+rewrite /opp_word /urepr /= prednK_modulus; apply/eqP.
+rewrite modnZE ?expn_eq0 // -Zofnat_modulus Zmod_mod.
+rewrite modn_small; first by apply/isword_tonatZP/iswordZP.
+rewrite Nat2Z.n2zB ?isword_tonatZWP //; first by apply/iswordZP.
+rewrite Z2Nat.id // -subZE -Zofnat_modulus Zminus_mod.
+rewrite Z_mod_same_full Z.sub_0_l [(x mod _)%Z]Zmod_small //.
+by apply/iswordZP.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Definition word_zmodE := (word0_zmodE, add_word_zmodE, opp_word_zmodE).
+
+(* -------------------------------------------------------------------- *)
+Lemma add_wordC : commutative add_word.
+Proof. by move=> x y; rewrite !word_zmodE addrC. Qed.
+
+Lemma add_wordA : associative add_word.
+Proof. by move=> x y z; rewrite !word_zmodE !word_of_zmodK addrA. Qed.
+
+Lemma add_word0w : left_id word0 add_word.
+Proof.
+by move=> x; rewrite !word_zmodE !word_of_zmodK add0r zmod_of_wordK.
+Qed.
+
+Lemma add_wordNw : left_inverse word0 opp_word add_word.
+Proof.
+by move=> x; rewrite !word_zmodE @word_of_zmodK addNr.
+Qed.
+
+Definition word_zmodMixin :=
+  ZmodMixin add_wordA add_wordC add_word0w add_wordNw.
+
+Canonical word_zmodType :=
+  Eval hnf in ZmodType n.-word word_zmodMixin.
 
 (* -------------------------------------------------------------------- *)
 Notation wbits := (n.-tuple bool).
