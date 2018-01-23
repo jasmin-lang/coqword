@@ -65,7 +65,7 @@ Notation "n .-word" := (word n)
   (at level 2, format "n .-word") : type_scope.
 
 (* -------------------------------------------------------------------- *)
-Section WordRing.
+Section WordBaseTheory.
 Context (n : nat).
 
 Notation isword z := (0 <= z < modulus n)%R.
@@ -148,12 +148,32 @@ Definition word0 := mkWord isword0.
 Lemma isword_word (w : n.-word) : isword (w : Z).
 Proof. by apply/(valP w). Qed.
 
-Hint Resolve 0 isword_word.
-
 (* -------------------------------------------------------------------- *)
 Lemma word_eqE (w1 w2 : n.-word) :
   (w1 == w2) = (urepr w1 == urepr w2)%Z.
 Proof. by rewrite -val_eqE. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma isword_geZ0 (w : Z) : isword w -> (0 <= w)%Z.
+Proof. by case/andP=> [/lezP]. Qed.
+
+Lemma word_geZ0 (w : n.-word) : (0 <= w)%Z.
+Proof. by apply/isword_geZ0/isword_word. Qed.
+
+End WordBaseTheory.
+
+(* -------------------------------------------------------------------- *)
+Hint Resolve 0 isword_word.
+Hint Extern  0 (0 <= _)%Z => by apply/isword_geZ0; eassumption.
+Hint Resolve 0 word_geZ0.
+
+Arguments word0 [n].
+
+(* ==================================================================== *)
+Section WordZmod.
+Context (n : nat).
+
+Notation mkword := (@mkword n).
 
 (* -------------------------------------------------------------------- *)
 Definition add_word (w1 w2 : n.-word) :=
@@ -165,30 +185,22 @@ Definition sub_word (w1 w2 : n.-word) :=
 Definition opp_word (w : n.-word) :=
   mkword (- urepr w)%Z.
 
-(* -------------------------------------------------------------------- *)
-Lemma isword_geZ0 (w : Z) : isword w -> (0 <= w)%Z.
-Proof. by case/andP=> [/lezP]. Qed.
-
-Hint Extern 0 (0 <= _)%Z => by apply/isword_geZ0; assumption.
-
-Lemma word_geZ0 (w : n.-word) : (0 <= w)%Z.
-Proof. by apply/isword_geZ0. Qed.
-
-Hint Resolve 0 word_geZ0.
+Definition mul_word (w1 w2 : n.-word) :=
+  mkword (urepr w1 * urepr w2).
 
 (* -------------------------------------------------------------------- *)
 Notation mword n := 'I_(2^n).-1.+1.
 
-Definition zmod_of_word (w : n.-word) : mword n :=
+Definition ord_of_word (w : n.-word) : mword n :=
   inZp (Z.to_nat w).
 
-Definition word_of_zmod (w : mword n) : n.-word :=
+Definition word_of_ord (w : mword n) : n.-word :=
   mkword (Z.of_nat w).
 
 (* -------------------------------------------------------------------- *)
-Lemma zmod_of_wordK : cancel zmod_of_word word_of_zmod.
+Lemma ord_of_wordK : cancel ord_of_word word_of_ord.
 Proof.
-rewrite /zmod_of_word /word_of_zmod => -[w /= h].
+rewrite /ord_of_word /word_of_ord => -[w /= h].
 rewrite (rwP eqP) -val_eqE /= modn_small.
 + rewrite prednK_modulus -(rwP ltP) Nat2Z.inj_lt.
   rewrite Z2Nat.id //; case/andP: h => _ /ltzP.
@@ -198,9 +210,9 @@ rewrite (rwP eqP) -val_eqE /= modn_small.
 Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma word_of_zmodK : cancel word_of_zmod zmod_of_word.
+Lemma word_of_ordK : cancel word_of_ord ord_of_word.
 Proof.
-rewrite /zmod_of_word /word_of_zmod => -[k /= lt].
+rewrite /ord_of_word /word_of_ord => -[k /= lt].
 apply/eqP; rewrite -val_eqE /= prednK_modulus.
 rewrite prednK_modulus in lt; rewrite Zmod_small.
 + by apply/isword_ofnatZP.
@@ -208,12 +220,12 @@ rewrite prednK_modulus in lt; rewrite Zmod_small.
 Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma word0_zmodE : word0 = word_of_zmod 0%R.
+Lemma word0_ordE : word0 = word_of_ord 0%R.
 Proof. by rewrite (rwP eqP) word_eqE. Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma add_word_zmodE (x y : n.-word) :
-  add_word x y = word_of_zmod (zmod_of_word x + zmod_of_word y)%R.
+Lemma add_word_ordE (x y : n.-word) :
+  add_word x y = word_of_ord (ord_of_word x + ord_of_word y)%R.
 Proof.
 rewrite (rwP eqP) word_eqE /=; case: x y => [x hx] [y hy].
 rewrite /add_word /urepr /= prednK_modulus; apply/eqP.
@@ -225,8 +237,8 @@ by rewrite Zmod_mod Nat2Z.n2zD !Z2Nat.id.
 Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma opp_word_zmodE (x : n.-word) :
-  opp_word x = word_of_zmod (- zmod_of_word x)%R.
+Lemma opp_word_ordE (x : n.-word) :
+  opp_word x = word_of_ord (- ord_of_word x)%R.
 Proof.
 rewrite (rwP eqP) word_eqE /=; case: x => [x hx].
 rewrite /opp_word /urepr /= prednK_modulus; apply/eqP.
@@ -239,30 +251,196 @@ by apply/iswordZP.
 Qed.
 
 (* -------------------------------------------------------------------- *)
-Definition word_zmodE := (word0_zmodE, add_word_zmodE, opp_word_zmodE).
+Definition word_ordE := (word0_ordE, add_word_ordE, opp_word_ordE).
 
 (* -------------------------------------------------------------------- *)
-Lemma add_wordC : commutative add_word.
-Proof. by move=> x y; rewrite !word_zmodE addrC. Qed.
+Lemma addwC : commutative add_word.
+Proof. by move=> x y; rewrite !word_ordE addrC. Qed.
 
-Lemma add_wordA : associative add_word.
-Proof. by move=> x y z; rewrite !word_zmodE !word_of_zmodK addrA. Qed.
+Lemma addwA : associative add_word.
+Proof. by move=> x y z; rewrite !word_ordE !word_of_ordK addrA. Qed.
 
-Lemma add_word0w : left_id word0 add_word.
+Lemma add0w : left_id word0 add_word.
 Proof.
-by move=> x; rewrite !word_zmodE !word_of_zmodK add0r zmod_of_wordK.
+by move=> x; rewrite !word_ordE !word_of_ordK add0r ord_of_wordK.
 Qed.
 
-Lemma add_wordNw : left_inverse word0 opp_word add_word.
+Lemma addNw : left_inverse word0 opp_word add_word.
 Proof.
-by move=> x; rewrite !word_zmodE @word_of_zmodK addNr.
+by move=> x; rewrite !word_ordE @word_of_ordK addNr.
 Qed.
 
-Definition word_zmodMixin :=
-  ZmodMixin add_wordA add_wordC add_word0w add_wordNw.
+Definition word_ordMixin :=
+  ZmodMixin addwA addwC add0w addNw.
 
-Canonical word_zmodType :=
-  Eval hnf in ZmodType n.-word word_zmodMixin.
+Canonical word_ordType :=
+  Eval hnf in ZmodType n.-word word_ordMixin.
+
+(* -------------------------------------------------------------------- *)
+Lemma ord_of_word_is_additive : additive ord_of_word.
+Proof.
+move=> /= x y; rewrite [in LHS]/GRing.add [in LHS]/GRing.opp /=.
+by rewrite !word_ordE /= !word_of_ordK.
+Qed.
+
+Canonical ord_of_word_additive :=
+  Additive ord_of_word_is_additive.
+
+Canonical word_of_ord_additive :=
+  Additive (can2_additive ord_of_wordK word_of_ordK).
+End WordZmod.
+
+(* ==================================================================== *)
+Section WordRing.
+Context (n : nat).
+
+(* -------------------------------------------------------------------- *)
+Notation isword z := (0 <= z < modulus n.+1)%R.
+
+(* -------------------------------------------------------------------- *)
+Notation mword n := 'Z_(2^n).
+
+Lemma word_Fcast : (2^n.+1).-1.+1 = (Zp_trunc (2^n.+1)).+2.
+Proof.
+rewrite prednK_modulus Zp_cast // expnS.
+by rewrite leq_pmulr // expn_gt0.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma isword1 : isword 1%Z.
+Proof.
+rewrite ler01 /= modulusE exprS (@ltr_le_trans _ 2%:R) //.
+by rewrite ler_pmulr // exprn_ege1.
+Qed.
+
+Definition word1 := mkWord isword1.
+
+(* -------------------------------------------------------------------- *)
+Definition zmod_of_word (w : n.+1.-word) : mword n.+1 :=
+  cast_ord word_Fcast (ord_of_word w).
+
+Definition word_of_zmod (w : mword n.+1) : n.+1.-word :=
+  word_of_ord (cast_ord (esym word_Fcast) w).
+
+(* -------------------------------------------------------------------- *)
+Lemma zmod_of_wordK : cancel zmod_of_word word_of_zmod.
+Proof.
+move=> w; rewrite /zmod_of_word /word_of_zmod.
+by rewrite cast_ordK ord_of_wordK.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma word_of_zmodK : cancel word_of_zmod zmod_of_word.
+Proof.
+move=> w; rewrite /zmod_of_word /word_of_zmod.
+by rewrite word_of_ordK cast_ordKV.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma zmod_of_word_is_additive : additive zmod_of_word.
+Proof.
+move=> /= x y; rewrite {1}/zmod_of_word raddfB /=.
+by apply/eqP; rewrite -val_eqE /= -word_Fcast.
+Qed.
+
+Canonical zmod_of_word_additive :=
+  Additive zmod_of_word_is_additive.
+
+Canonical word_of_zmod_additive :=
+  Additive (can2_additive zmod_of_wordK word_of_zmodK).
+
+(* -------------------------------------------------------------------- *)
+Lemma word0_zmodE : word0 = word_of_zmod 0%R.
+Proof. by rewrite word0_ordE. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma word1_zmodE : word1 = word_of_zmod 1%R.
+Proof. by rewrite (rwP eqP) -val_eqE /= Zmod_small. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma add_word_zmodE (x y : n.+1.-word) :
+  add_word x y = word_of_zmod (zmod_of_word x + zmod_of_word y)%R.
+Proof.
+rewrite add_word_ordE /word_of_zmod; congr word_of_ord.
+by apply/eqP; rewrite -val_eqE /= word_Fcast.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma opp_word_zmodE (x : n.+1.-word) :
+  opp_word x = word_of_zmod (- zmod_of_word x)%R.
+Proof.
+rewrite opp_word_ordE /word_of_zmod; congr word_of_ord.
+by apply/eqP; rewrite -val_eqE /= word_Fcast.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma mul_word_zmodE (x y : n.+1.-word) :
+  mul_word x y = word_of_zmod (zmod_of_word x * zmod_of_word y)%R.
+Proof.
+rewrite (rwP eqP) word_eqE /=; case: x y => [x hx] [y hy].
+rewrite /mul_word /urepr /= prednK_modulus; apply/eqP.
+rewrite [Z.to_nat x %% _]modn_small 1?[Z.to_nat y %% _]modn_small.
++ by apply/isword_tonatZP/iswordZP.
++ by apply/isword_tonatZP/iswordZP.
+rewrite -word_Fcast prednK_modulus modnZE ?expn_eq0 //.
+by rewrite -Zofnat_modulus Zmod_mod Nat2Z.n2zM !Z2Nat.id.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Definition word_zmodE :=
+  (word0_zmodE, word1_zmodE, add_word_zmodE, opp_word_zmodE, mul_word_zmodE).
+
+(* -------------------------------------------------------------------- *)
+Lemma mulwC : commutative (@mul_word n.+1).
+Proof. by move=> x y; rewrite !word_zmodE mulrC. Qed.
+
+Lemma mulwA : associative (@mul_word n.+1).
+Proof. by move=> x y z; rewrite !word_zmodE !word_of_zmodK mulrA. Qed.
+
+Lemma mul1w : left_id word1 (@mul_word n.+1).
+Proof.
+by move=> x; rewrite !word_zmodE !word_of_zmodK mul1r zmod_of_wordK.
+Qed.
+
+Lemma mulwDl : left_distributive (@mul_word n.+1) +%R.
+Proof.
+by move=> x w1 w2; rewrite !word_zmodE raddfD /= mulrDl [LHS]raddfD.
+Qed.
+
+Lemma onew_neq0 : word1 != 0%R.
+Proof. by rewrite -val_eqE. Qed.
+
+(* -------------------------------------------------------------------- *)
+Definition word_ringMixin :=
+  ComRingMixin mulwA mulwC mul1w mulwDl onew_neq0.
+
+Canonical word_ringType :=
+  Eval hnf in RingType n.+1.-word word_ringMixin.
+Canonical word_comRingType :=
+  Eval hnf in ComRingType n.+1.-word mulwC.
+
+(* -------------------------------------------------------------------- *)
+Lemma zmod_of_word_is_rmorphism : rmorphism zmod_of_word.
+Proof.
+split; first by apply/zmod_of_word_is_additive.
+split=> /= [x y|]; rewrite ?[in LHS]/GRing.mul ?[in LHS]/GRing.one /=.
++ by rewrite !word_zmodE /= !word_of_zmodK.
++ by rewrite !word_zmodE /= !word_of_zmodK.
+Qed.
+
+Canonical zmod_of_word_rmorphism :=
+  RMorphism zmod_of_word_is_rmorphism.
+
+Canonical word_of_zmod_rmorphism :=
+  RMorphism (can2_rmorphism zmod_of_wordK word_of_zmodK).
+End WordRing.
+
+(* ==================================================================== *)
+Section WordBits.
+Context (n : nat).
+
+(* -------------------------------------------------------------------- *)
+Notation isword z := (0 <= z < modulus n)%R.
 
 (* -------------------------------------------------------------------- *)
 Notation wbits := (n.-tuple bool).
@@ -358,10 +536,10 @@ rewrite (big_morph odd odd_add (erefl _)) big1 ?addbF //.
 by move=> i lt_ni; rewrite -(subnSK lt_ni) expnS -mulnA odd_mul.
 Qed.
 
-End WordRing.
+End WordBits.
 
 (* -------------------------------------------------------------------- *)
-Section WordBits.
+Section WordLogicals.
 Context (n : nat).
 
 Notation isword z := (0 <= z < modulus n)%R.
@@ -375,4 +553,4 @@ Proof. Admitted.
 Definition wand (w1 w2 : n.-word) := mkWord (wand_subproof w1 w2).
 Definition wor  (w1 w2 : n.-word) := mkWord (wor_subproof  w1 w2).
 
-End WordBits.
+End WordLogicals.
