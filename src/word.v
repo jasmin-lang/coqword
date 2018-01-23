@@ -359,3 +359,20 @@ by move=> i lt_ni; rewrite -(subnSK lt_ni) expnS -mulnA odd_mul.
 Qed.
 
 End WordRing.
+
+(* -------------------------------------------------------------------- *)
+Section WordBits.
+Context (n : nat).
+
+Notation isword z := (0 <= z < modulus n)%R.
+
+Lemma wand_subproof (w1 w2 : n.-word) : isword (Z.land w1 w2).
+Proof. Admitted.
+
+Lemma wor_subproof (w1 w2 : n.-word) : isword (Z.lor w1 w2).
+Proof. Admitted.
+
+Definition wand (w1 w2 : n.-word) := mkWord (wand_subproof w1 w2).
+Definition wor  (w1 w2 : n.-word) := mkWord (wor_subproof  w1 w2).
+
+End WordBits.
