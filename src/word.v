@@ -272,15 +272,18 @@ Definition wbit (w : n.-word) (n : nat) : bool :=
 
 Lemma wbitE w k : wbit w k = odd (Z.to_nat w %/ (2 ^ k)).
 Proof.
-case: w => -[] // => [|p] h; rewrite /wbit {h}/=.
-+ by rewrite div0n /= Z.testbit_0_l.
-apply/esym; elim: k p => [|k ih] [p|p|] //=.
-+ by rewrite expn0 divn1 Pos2Nat.inj_xI mulP /= mul2n odd_double.
-+ by rewrite expn0 divn1 Pos2Nat.inj_xO mulP mul2n odd_double.
-+ admit.
-+ admit.
-+ admit.
-Admitted.
+have ->: Z.to_nat w %/ (2 ^ k) = Z.to_nat (w / (2 ^ k)).
++ rewrite int_of_Z_PoszE; apply/Nat2Z.inj; rewrite Z2Nat.id.
+  * by apply/Z.div_pos => //; apply/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
+  by rewrite divnZE ?expn_eq0 // Z2Nat.id // Nat2Z.n2zX expZE.
+rewrite /wbit Z.testbit_odd Z.shiftr_div_pow2.
++ by apply/Nat2Z.is_nonneg.
+rewrite int_of_Z_PoszE oddZE // divZE.
++ by apply/ltzP/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
++ apply/lezP/leZE; rewrite int_to_ZK /= divz_ge0.
+  * by apply/(@ltZE 0)/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
+  * by apply/(@leZE 0).
+Qed.
 
 Definition w2t (w : n.-word) : wbits :=
   [tuple wbit w k | k < n].

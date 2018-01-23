@@ -14,7 +14,7 @@ Import GRing.Theory Num.Theory.
 
 Local Notation "m ^ n" := (expn m n) : nat_scope.
 
-Let rmorph := (rmorphM, rmorphB, rmorphD, rmorphN, rmorph1, rmorph0).
+Notation rmorph := (rmorphM, rmorphB, rmorphD, rmorphN, rmorph1, rmorph0).
 
 (* -------------------------------------------------------------------- *)
 Section PosInd.
@@ -253,6 +253,10 @@ Lemma Z_to_int_of_natE k : Z_to_int (Z.of_nat k) = k%:Z.
 Proof. by apply/(can_inj int_to_ZK); rewrite Z_to_intK. Qed.
 
 (* -------------------------------------------------------------------- *)
+Lemma int_of_Z_PoszE k : int_to_Z k%:Z = Z.of_nat k.
+Proof. by []. Qed.
+
+(* -------------------------------------------------------------------- *)
 Coercion int_to_Z : int >-> Z.
 Coercion Z_to_int : Z >-> int.
 
@@ -307,8 +311,16 @@ move=> gt0_b; rewrite /modz Zmod_eq_full; last first.
 + by rewrite rmorphB !rmorphM /= !Z_to_intK divZE.
 Qed.
 
+Lemma divnZE (a b : nat) :
+  b != 0%nat -> Z.of_nat (a %/ b) = (Z.of_nat a / Z.of_nat b)%Z.
+Proof.
+move=> nz_b; apply/(can_inj Z_to_intK); rewrite Z_to_int_of_natE.
+rewrite -divz_nat divZE; last by case: b nz_b.
+by rewrite int_to_ZK !Z_to_int_of_natE.
+Qed.
+
 Lemma modnZE (a b : nat) :
-  b != 0%N -> Z.of_nat (a %% b) = (Z.of_nat a mod Z.of_nat b)%Z.
+  b != 0%nat -> Z.of_nat (a %% b) = (Z.of_nat a mod Z.of_nat b)%Z.
 Proof.
 move=> nz_b; apply/(can_inj Z_to_intK); rewrite Z_to_int_of_natE.
 rewrite -modz_nat modZE; last by case: b nz_b.
@@ -392,3 +404,11 @@ Proof. by rewrite -mulZE Nat2Z.inj_mul. Qed.
 Lemma n2zX n m : Z.of_nat (n ^ m) = (Z.of_nat n ^+ m)%R.
 Proof. by elim: m => // m ih; rewrite exprS -ih -n2zM -expnS. Qed.
 End Nat2Z.
+
+(* -------------------------------------------------------------------- *)
+Lemma oddZE (z : Z) : (0 <= z)%R -> Z.odd z = odd (Z.to_nat z).
+Proof.
+move=> ge0_z; have : injective nat_of_bool by move=> [] [].
+apply; rewrite -modn2; apply/Nat2Z.inj; rewrite modnZE //.
+by rewrite Z2Nat.id ?(rwP lezP) // Zmod_odd; case: ifP.
+Qed.
