@@ -36,7 +36,7 @@ this-quick::
 	+$(COQMAKE) quick
 
 this-distclean:: this-clean
-	rm -f Makefile.coq
+	rm -f Makefile.coq Makefile.coq.conf Makefile.coq.bak
 
 this-clean::
 	@if [ -f Makefile.coq ]; then $(COQMAKE) clean; fi
