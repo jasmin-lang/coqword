@@ -445,30 +445,6 @@ Notation isword z := (0 <= z < modulus n)%R.
 (* -------------------------------------------------------------------- *)
 Notation wbits := (n.-tuple bool).
 
-Definition wbit (w : n.-word) (n : nat) : bool :=
-  Z.testbit w (Z.of_nat n).
-
-Lemma wbitE w k : wbit w k = odd (Z.to_nat w %/ (2 ^ k)).
-Proof.
-have ->: Z.to_nat w %/ (2 ^ k) = Z.to_nat (w / (2 ^ k)).
-+ rewrite int_of_Z_PoszE; apply/Nat2Z.inj; rewrite Z2Nat.id.
-  * by apply/Z.div_pos => //; apply/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
-  by rewrite divnZE ?expn_eq0 // Z2Nat.id // Nat2Z.n2zX expZE.
-rewrite /wbit Z.testbit_odd Z.shiftr_div_pow2.
-+ by apply/Nat2Z.is_nonneg.
-rewrite int_of_Z_PoszE oddZE // divZE.
-+ by apply/ltzP/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
-+ apply/lezP/leZE; rewrite int_to_ZK /= divz_ge0.
-  * by apply/(@ltZE 0)/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
-  * by apply/(@leZE 0).
-Qed.
-
-Definition w2t (w : n.-word) : wbits :=
-  [tuple wbit w k | k < n].
-
-Definition t2w_def (t : wbits) : Z :=
-  (\sum_(i < n) 2%:R^+i * (tnth t i)%:R)%R.
-
 Lemma le2Xn_sumbits k (F : nat -> bool) :
   \sum_(i < k) 2 ^ i * F i < 2 ^ k.
 Proof.
@@ -477,8 +453,43 @@ rewrite expnS mul2n -addnn -addSn leq_add //.
 by rewrite -[X in _ <= X]muln1 leq_mul2l leq_b1 orbT.
 Qed.
 
+Lemma le2Xn_sumbitsZ k (F : nat -> bool) :
+  (\sum_(i < k) 2%:R ^ i * (F i)%:R < 2%:R ^+ k :> Z)%R.
+Proof.
+elim: k => [|k ih]; [by rewrite big_ord0 | rewrite big_ord_recr /=].
+rewrite exprS mulr_natl [X in (_ < X)%R]mulr2n ltr_le_add //.
+by case: (F k); rewrite !Monoid.simpm // exprn_ge0.
+Qed.
+
 Local Lemma ge0_bit k b : (0 <= 2%:R ^+ k * b%:R :> Z)%R.
 Proof. by rewrite mulr_ge0 // ?exprn_ge0 // ler0n. Qed.
+
+Definition wbit (z : Z) (n : nat) : bool :=
+  Z.testbit z (Z.of_nat n).
+
+Lemma wbitE (z : Z) k :
+  (0 <= z)%R -> wbit z k = odd (Z.to_nat z %/ (2 ^ k)).
+Proof.
+move=> ge0_z; have ->: Z.to_nat z %/ (2 ^ k) = Z.to_nat (z / (2 ^ k)).
++ rewrite int_of_Z_PoszE; apply/Nat2Z.inj; rewrite Z2Nat.id.
+  * apply/Z.div_pos; first by apply/leZP.
+    by apply/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
+  rewrite divnZE ?expn_eq0 // Z2Nat.id ?(rwP (leZP _ _)) //.
+  by rewrite Nat2Z.n2zX expZE.
+rewrite /wbit Z.testbit_odd Z.shiftr_div_pow2.
++ by apply/Nat2Z.is_nonneg.
+rewrite int_of_Z_PoszE oddZE // divZE.
++ by apply/ltzP/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
++ apply/lezP/leZE; rewrite int_to_ZK /= divz_ge0.
+  * by apply/(@ltZE 0)/Z.pow_pos_nonneg/Nat2Z.is_nonneg.
+  * by apply/(@leZE 0)/leZP.
+Qed.
+
+Definition w2t (w : n.-word) : wbits :=
+  [tuple wbit w k | k < n].
+
+Definition t2w_def (t : wbits) : Z :=
+  (\sum_(i < n) 2%:R^+i * (tnth t i)%:R)%R.
 
 Local Lemma t2w_proof (t : wbits) : isword (t2w_def t).
 Proof.
@@ -516,6 +527,7 @@ Lemma t2wK : cancel t2w w2t.
 Proof.
 move=> w; apply/eq_from_tnth => k; rewrite /w2t /t2w.
 rewrite tnth_map tnth_ord_tuple wbitE /t2w_def /=.
++ by apply/sumr_ge0 => i _; apply/ge0_bit.
 rewrite Ztonat_t2w; pose F i := 2 ^ i * nth false w i.
 rewrite (eq_bigr (F \o val)); first by move=> i; rewrite (tnth_nth false).
 rewrite (bigD1 k) //= -(big_mkord [pred i | i != val k]).
@@ -539,18 +551,63 @@ Qed.
 End WordBits.
 
 (* -------------------------------------------------------------------- *)
+Lemma z2wE (n : nat) (z : Z) :
+     (0 <= z)%R
+  -> (forall i, i >= n -> ~~ wbit z i)
+  -> z = (\sum_(i < n) 2%:R ^+ i * (wbit z i)%:R)%R.
+Proof.
+rewrite /wbit; elim: n z => [|m ih] z ge0_z hbit.
++ rewrite big_ord0; apply/Z.bits_inj_0 => i; case: (ltrP i 0).
+  * by move=> lt0_i; rewrite Z.testbit_neg_r // (rwP ltzP).
+  by case/lezP/Z_of_nat_complete => n ->; apply/negbTE/hbit.
+rewrite [LHS](Z_div_mod_eq _ 2) // -Z.bit0_mod {1}[(z/2)%Z]ih.
++ by apply/lezP/Z_div_pos/lezP.
++ move=> i le_mi; rewrite Z.div2_bits; first by apply/Zle_0_nat.
+  by rewrite -Nat2Z.inj_succ hbit.
+rewrite big_ord_recl expr0 mul1r addrC; congr +%R; last first.
++ by rewrite /= /Z.b2z; case: ifP.
+rewrite mulZE mulr_sumr; apply/eq_bigr => i _.
+rewrite exprS mulrA; congr *%R; rewrite Z.div2_bits.
++ by apply/Zle_0_nat. + by rewrite -Nat2Z.inj_succ.
+Qed.
+
+(* -------------------------------------------------------------------- *)
 Section WordLogicals.
 Context (n : nat).
 
 Notation isword z := (0 <= z < modulus n)%R.
 
+(* -------------------------------------------------------------------- *)
+Lemma wbit_word_ovf (w : n.-word) i : (i >= n) -> wbit w i = false.
+Proof.
+case: (w =P 0)%R => [->|]; first by rewrite /wbit Z.bits_0.
+move=> /eqP nz_w le_ni; rewrite /wbit Z.bits_above_log2 //.
+rewrite -Z.log2_lt_pow2; last first.
++ by rewrite Z.le_neq; split=> //; apply/eqP; rewrite eq_sym nz_w.
+apply/ltzP/(@ltr_le_trans _ (2 ^ Z.of_nat n)%Z); last first.
++ by apply/lezP/Z.pow_le_mono_r/inj_le/leP.
+by rewrite -two_power_nat_equiv; case/andP: (isword_word w).
+Qed.
+
+(* -------------------------------------------------------------------- *)
 Lemma wand_subproof (w1 w2 : n.-word) : isword (Z.land w1 w2).
-Proof. Admitted.
+Proof.
+have h: (0 <= Z.land w1 w2)%R by apply/lezP/Z.land_nonneg; left.
+apply/andP; split => //; rewrite [Z.land _ _](@z2wE n)//.
++ move=> i le_ni; rewrite /wbit Z.land_spec.
+  by rewrite -!/(wbit _ _) !wbit_word_ovf.
++ by rewrite modulusE le2Xn_sumbitsZ.
+Qed.
 
 Lemma wor_subproof (w1 w2 : n.-word) : isword (Z.lor w1 w2).
-Proof. Admitted.
+Proof.
+have h: (0 <= Z.lor w1 w2)%R by apply/lezP/Z.lor_nonneg; split.
+apply/andP; split => //; rewrite [Z.lor _ _](@z2wE n)//.
++ move=> i le_ni; rewrite /wbit Z.lor_spec.
+  by rewrite -!/(wbit _ _) !wbit_word_ovf.
++ by rewrite modulusE le2Xn_sumbitsZ.
+Qed.
 
 Definition wand (w1 w2 : n.-word) := mkWord (wand_subproof w1 w2).
 Definition wor  (w1 w2 : n.-word) := mkWord (wor_subproof  w1 w2).
-
 End WordLogicals.
