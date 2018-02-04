@@ -80,6 +80,7 @@ Qed.
 Definition mkword (z : Z) := mkWord (mkword_proof z).
 
 (* -------------------------------------------------------------------- *)
+(* FIXME: notation? *)
 Definition urepr (w : word n) : Z := val w.
 
 (* -------------------------------------------------------------------- *)
@@ -160,6 +161,8 @@ Proof. by case/andP=> [/lezP]. Qed.
 Lemma word_geZ0 (w : n.-word) : (0 <= w)%Z.
 Proof. by apply/isword_geZ0/isword_word. Qed.
 
+(* -------------------------------------------------------------------- *)
+Definition wsize (w : n.-word) := n.
 End WordBaseTheory.
 
 (* -------------------------------------------------------------------- *)
@@ -465,7 +468,7 @@ Local Lemma ge0_bit k b : (0 <= 2%:R ^+ k * b%:R :> Z)%R.
 Proof. by rewrite mulr_ge0 // ?exprn_ge0 // ler0n. Qed.
 
 Definition wbit (z : Z) (n : nat) : bool :=
-  Z.testbit z (Z.of_nat n).
+  nosimpl (Z.testbit z (Z.of_nat n)).
 
 Lemma wbitE (z : Z) k :
   (0 <= z)%R -> wbit z k = odd (Z.to_nat z %/ (2 ^ k)).
@@ -548,35 +551,6 @@ rewrite (big_morph odd odd_add (erefl _)) big1 ?addbF //.
 by move=> i lt_ni; rewrite -(subnSK lt_ni) expnS -mulnA odd_mul.
 Qed.
 
-End WordBits.
-
-(* -------------------------------------------------------------------- *)
-Lemma z2wE (n : nat) (z : Z) :
-     (0 <= z)%R
-  -> (forall i, i >= n -> ~~ wbit z i)
-  -> z = (\sum_(i < n) 2%:R ^+ i * (wbit z i)%:R)%R.
-Proof.
-rewrite /wbit; elim: n z => [|m ih] z ge0_z hbit.
-+ rewrite big_ord0; apply/Z.bits_inj_0 => i; case: (ltrP i 0).
-  * by move=> lt0_i; rewrite Z.testbit_neg_r // (rwP ltzP).
-  by case/lezP/Z_of_nat_complete => n ->; apply/negbTE/hbit.
-rewrite [LHS](Z_div_mod_eq _ 2) // -Z.bit0_mod {1}[(z/2)%Z]ih.
-+ by apply/lezP/Z_div_pos/lezP.
-+ move=> i le_mi; rewrite Z.div2_bits; first by apply/Zle_0_nat.
-  by rewrite -Nat2Z.inj_succ hbit.
-rewrite big_ord_recl expr0 mul1r addrC; congr +%R; last first.
-+ by rewrite /= /Z.b2z; case: ifP.
-rewrite mulZE mulr_sumr; apply/eq_bigr => i _.
-rewrite exprS mulrA; congr *%R; rewrite Z.div2_bits.
-+ by apply/Zle_0_nat. + by rewrite -Nat2Z.inj_succ.
-Qed.
-
-(* -------------------------------------------------------------------- *)
-Section WordLogicals.
-Context (n : nat).
-
-Notation isword z := (0 <= z < modulus n)%R.
-
 (* -------------------------------------------------------------------- *)
 Lemma wbit_word_ovf (w : n.-word) i : (i >= n) -> wbit w i = false.
 Proof.
@@ -590,10 +564,82 @@ by rewrite -two_power_nat_equiv; case/andP: (isword_word w).
 Qed.
 
 (* -------------------------------------------------------------------- *)
+Lemma z2sumE (z : Z) :
+     (0 <= z)%R
+  -> (forall i, i >= n -> ~~ wbit z i)
+  -> z = (\sum_(i < n) 2%:R ^+ i * (wbit z i)%:R)%R.
+Proof.
+rewrite /wbit; elim: n z => [|m ih] z ge0_z hbit.
++ rewrite big_ord0; apply/Z.bits_inj_0 => i; case: (ltrP i 0).
+  * by move=> lt0_i; rewrite Z.testbit_neg_r // (rwP ltzP).
+  by case/lezP/Z_of_nat_complete => k ->; apply/negbTE/hbit.
+rewrite [LHS](Z_div_mod_eq _ 2) // -Z.bit0_mod {1}[(z/2)%Z]ih.
++ by apply/lezP/Z_div_pos/lezP.
++ move=> i le_mi; rewrite Z.div2_bits; first by apply/Zle_0_nat.
+  by rewrite -Nat2Z.inj_succ hbit.
+rewrite big_ord_recl expr0 mul1r addrC; congr +%R; last first.
++ by rewrite /= /Z.b2z; case: ifP.
+rewrite mulZE mulr_sumr; apply/eq_bigr => i _.
+rewrite exprS mulrA; congr *%R; rewrite Z.div2_bits.
++ by apply/Zle_0_nat. + by rewrite -Nat2Z.inj_succ.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma w2sumE (w : n.-word) :
+  w = (\sum_(i < n) 2%:R ^+ i * (wbit w i)%:R)%R :> Z.
+Proof.
+apply/z2sumE => //; first by case/andP: (isword_word w).
+by move=> i le_ni; rewrite wbit_word_ovf.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma eq_from_wbit (w1 w2 : n.-word) :
+  reflect
+    (forall i : 'I_n, wbit w1 i = wbit w2 i)
+    (w1 == w2).
+Proof.
+apply: (iffP eqP) => [->//|heq]; apply/val_eqP => /=.
+rewrite [_ w1]w2sumE [_ w2]w2sumE; apply/eqP/eq_bigr.
+by move=> /= i _; rewrite heq.
+Qed.
+
+End WordBits.
+
+(* ==================================================================== *)
+Notation lsb w := (wbit (toword w) 0).
+Notation msb w := (wbit (toword w) (wsize w).-1).
+
+(* ==================================================================== *)
+Section Word0Extend.
+Context (n : nat).
+
+Lemma w0extend_subproof (p : nat) (w : n.-word) :
+  (0 <= val w < modulus (n + p))%R.
+Proof.
+case/andP: (isword_word w) => -> h /=; rewrite modulusE.
+rewrite exprD (ltr_le_trans h) // modulusE ler_pemulr //.
++ by apply/exprn_ge0. + by apply/exprn_ege1.
+Qed.
+
+Definition w0extend :=
+  nosimpl (fun p w => mkWord (w0extend_subproof p w)).
+
+Definition wbit_w0extend (p : nat) (w : n.-word) i :
+  wbit (w0extend p w) i = if i < n then wbit w i else false.
+Proof. by case: ifPn => //; rewrite -leqNgt; apply/wbit_word_ovf. Qed.
+End Word0Extend.
+
+(* -------------------------------------------------------------------- *)
+Section WordLogicals.
+Context (n : nat).
+
+Notation isword z := (0 <= z < modulus n)%R.
+
+(* -------------------------------------------------------------------- *)
 Lemma wand_subproof (w1 w2 : n.-word) : isword (Z.land w1 w2).
 Proof.
 have h: (0 <= Z.land w1 w2)%R by apply/lezP/Z.land_nonneg; left.
-apply/andP; split => //; rewrite [Z.land _ _](@z2wE n)//.
+apply/andP; split => //; rewrite [Z.land _ _](@z2sumE n)//.
 + move=> i le_ni; rewrite /wbit Z.land_spec.
   by rewrite -!/(wbit _ _) !wbit_word_ovf.
 + by rewrite modulusE le2Xn_sumbitsZ.
@@ -602,12 +648,56 @@ Qed.
 Lemma wor_subproof (w1 w2 : n.-word) : isword (Z.lor w1 w2).
 Proof.
 have h: (0 <= Z.lor w1 w2)%R by apply/lezP/Z.lor_nonneg; split.
-apply/andP; split => //; rewrite [Z.lor _ _](@z2wE n)//.
+apply/andP; split => //; rewrite [Z.lor _ _](@z2sumE n)//.
 + move=> i le_ni; rewrite /wbit Z.lor_spec.
   by rewrite -!/(wbit _ _) !wbit_word_ovf.
 + by rewrite modulusE le2Xn_sumbitsZ.
 Qed.
 
-Definition wand (w1 w2 : n.-word) := mkWord (wand_subproof w1 w2).
-Definition wor  (w1 w2 : n.-word) := mkWord (wor_subproof  w1 w2).
+Lemma wxor_subproof (w1 w2 : n.-word) : isword (Z.lxor w1 w2).
+Proof.
+have h: (0 <= Z.lxor w1 w2)%R by apply/lezP/Z.lxor_nonneg; split.
+apply/andP; split => //; rewrite [Z.lxor _ _](@z2sumE n)//.
++ move=> i le_ni; rewrite /wbit Z.lxor_spec.
+  by rewrite -!/(wbit _ _) !wbit_word_ovf.
++ by rewrite modulusE le2Xn_sumbitsZ.
+Qed.
+
+Definition wand := nosimpl (fun w1 w2 => mkWord (wand_subproof w1 w2)).
+Definition wor  := nosimpl (fun w1 w2 => mkWord (wor_subproof  w1 w2)).
+Definition wxor := nosimpl (fun w1 w2 => mkWord (wxor_subproof w1 w2)).
+
+(* -------------------------------------------------------------------- *)
+Lemma wandE (w1 w2 : n.-word) i :
+  wbit (wand w1 w2) i = wbit w1 i && wbit w2 i.
+Proof. by apply/Z.land_spec. Qed.
+
+Lemma worE (w1 w2 : n.-word) i :
+  wbit (wor w1 w2) i = wbit w1 i || wbit w2 i.
+Proof. by apply/Z.lor_spec. Qed.
+
+Lemma wxorE (w1 w2 : n.-word) i :
+  wbit (wxor w1 w2) i = wbit w1 i (+) wbit w2 i.
+Proof. by rewrite /wbit Z.lxor_spec /=; do 2! case: Z.testbit. Qed.
+
 End WordLogicals.
+
+(* ==================================================================== *)
+Section WordLogicalsTh.
+Context (n : nat).
+
+(* -------------------------------------------------------------------- *)
+Lemma wand_w0extend (p : nat) (w1 w2 : n.-word) :
+  w0extend p (wand w1 w2) = wand (w0extend p w1) (w0extend p w2).
+Proof. by apply/eqP/eq_from_wbit => i. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wor_w0extend (p : nat) (w1 w2 : n.-word) :
+  w0extend p (wor w1 w2) = wor (w0extend p w1) (w0extend p w2).
+Proof. by apply/eqP/eq_from_wbit => i. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wxor_w0extend (p : nat) (w1 w2 : n.-word) :
+  w0extend p (wxor w1 w2) = wxor (w0extend p w1) (w0extend p w2).
+Proof. by apply/eqP/eq_from_wbit => i. Qed.
+End WordLogicalsTh.
