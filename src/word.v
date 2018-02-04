@@ -610,6 +610,14 @@ Notation lsb w := (wbit (toword w) 0).
 Notation msb w := (wbit (toword w) (wsize w).-1).
 
 (* ==================================================================== *)
+Section SignedRepr.
+Context (n : nat).
+
+Definition srepr (w : n.-word) :=
+  (if msb w then (val w - modulus n.-1)%R else val w)%Z.
+End SignedRepr.
+
+(* ==================================================================== *)
 Section Word0Extend.
 Context (n : nat).
 
