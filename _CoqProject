@@ -4,5 +4,4 @@
 -R src CoqWord
 
 src/ssrZ.v
-src/ssrring.v
 src/word.v
