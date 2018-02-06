@@ -635,12 +635,52 @@ Definition srepr (w : n.-word) :=
 End SignedRepr.
 
 (* ==================================================================== *)
-Section SignedMul.
+Section WSplit.
 Context (n : nat).
+
+Notation isword n z := (0 <= z < modulus n)%R.
+
+Lemma wsplit1_subproof (w : n.*2.-word) :
+  isword n (Z.div_eucl w (modulus n)).1.
+Proof.
+rewrite [_.1](_ : _ = (w / modulus n)%Z) //; apply/andP; split.
++ by apply/lezP/Z_div_pos.
++ apply/ltzP/Zdiv_lt_upper_bound => //; rewrite modulusE.
+  rewrite mulZE -exprD addnn -modulusE (rwP ltzP).
+  by case/andP: (isword_word w).
+Qed.
+
+Lemma wsplit2_subproof (w : n.*2.-word) :
+  isword n (Z.div_eucl w (modulus n)).2.
+Proof. by rewrite [_.2](_ : _ = (w mod modulus n)%Z) ?mkword_proof. Qed.
+
+Definition wsplit (w : n.*2.-word) :=
+  let w' := Z.div_eucl w (modulus n) in
+  (@mkWord n w'.1 (wsplit1_subproof w),
+   @mkWord n w'.2 (wsplit2_subproof w)).
+End WSplit.
+
+(* ==================================================================== *)
+Section WMul.
+Context (n : nat).
+
+Notation isword n z := (0 <= z < modulus n)%R.
+
+Lemma wumul_subproof (w1 w2 : n.-word) : isword n.*2 (urepr w1 * urepr w2).
+Proof.
+rewrite mulr_ge0 ?urepr_ge0 //= modulusE -addnn exprD.
+by apply/ltr_pmul; rewrite -?modulusE ?(urepr_ge0, urepr_ltmod).
+Qed.
+
+Definition wumul (w1 w2 : n.-word) : n.*2.-word :=
+  mkWord (wumul_subproof w1 w2).
+
+Definition wumul2 (w1 w2 : n.-word) : n.-word * n.-word:=
+  wsplit (wumul w1 w2).
 
 Definition wsmul (w1 w2 : n.-word) : n.-word :=
   mkword n (srepr w1 * srepr w2)%R.
-End SignedMul.
+End WMul.
 
 (* ==================================================================== *)
 Section Word0Extend.
