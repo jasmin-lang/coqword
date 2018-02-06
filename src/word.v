@@ -439,6 +439,23 @@ Canonical word_of_zmod_rmorphism :=
 End WordRing.
 
 (* ==================================================================== *)
+Lemma mkword_val_small {n : nat} (z : Z) :
+  (0 <= z < 2%:R ^+ n.+1)%R -> mkword n.+1 z = z :> Z.
+Proof.
+move=> rg; rewrite /= Zmod_small // modulusE.
+by rewrite !(rwP lezP, rwP ltzP) (rwP andP).
+Qed.
+
+Lemma mkword_val0 {n : nat} (z : Z) : mkword n.+1 0 = 0 :> Z.
+Proof. by rewrite mkword_val_small ?lerr //= exprn_gt0. Qed.
+
+Lemma mkword_val1 {n : nat} (z : Z) : mkword n.+1 1 = 1 :> Z.
+Proof.
+rewrite mkword_val_small // (@ltr_le_trans _ 2%:R) //.
+by rewrite exprS ler_pemulr // exprn_ege1.
+Qed.
+
+(* ==================================================================== *)
 Section WordBits.
 Context (n : nat).
 
@@ -618,6 +635,14 @@ Definition srepr (w : n.-word) :=
 End SignedRepr.
 
 (* ==================================================================== *)
+Section SignedMul.
+Context (n : nat).
+
+Definition wsmul (w1 w2 : n.-word) : n.-word :=
+  mkword n (srepr w1 * srepr w2)%R.
+End SignedMul.
+
+(* ==================================================================== *)
 Section Word0Extend.
 Context (n : nat).
 
@@ -637,7 +662,7 @@ Definition wbit_w0extend (p : nat) (w : n.-word) i :
 Proof. by case: ifPn => //; rewrite -leqNgt; apply/wbit_word_ovf. Qed.
 End Word0Extend.
 
-(* -------------------------------------------------------------------- *)
+(* ==================================================================== *)
 Section WordLogicals.
 Context (n : nat).
 
