@@ -150,6 +150,11 @@ Lemma isword_word (w : n.-word) : isword (w : Z).
 Proof. by apply/(valP w). Qed.
 
 (* -------------------------------------------------------------------- *)
+Lemma word_eqP (w1 w2 : n.-word) :
+  reflect (w1 = w2) (toword w1 == toword w2).
+Proof. exact/val_eqP. Qed.
+
+(* -------------------------------------------------------------------- *)
 Lemma word_eqE (w1 w2 : n.-word) :
   (w1 == w2) = (urepr w1 == urepr w2)%Z.
 Proof. by rewrite -val_eqE. Qed.
@@ -446,14 +451,21 @@ move=> rg; rewrite /= Zmod_small // modulusE.
 by rewrite !(rwP lezP, rwP ltzP) (rwP andP).
 Qed.
 
-Lemma mkword_val0 {n : nat} (z : Z) : mkword n.+1 0 = 0 :> Z.
+Lemma mkword_val0 {n : nat} : mkword n.+1 0 = 0%Z :> Z.
 Proof. by rewrite mkword_val_small ?lerr //= exprn_gt0. Qed.
 
-Lemma mkword_val1 {n : nat} (z : Z) : mkword n.+1 1 = 1 :> Z.
+Lemma mkword_val1 {n : nat} : mkword n.+1 1 = 1%Z :> Z.
 Proof.
 rewrite mkword_val_small // (@ltr_le_trans _ 2%:R) //.
 by rewrite exprS ler_pemulr // exprn_ege1.
 Qed.
+
+(* ==================================================================== *)
+Lemma mkword0E {n : nat} : mkword n.+1 0 = 0%R :> word n.+1.
+Proof. by apply/word_eqP; rewrite mkword_val0. Qed.
+
+Lemma mkword1E {n : nat} : mkword n.+1 1 = 1%R :> word n.+1.
+Proof. by apply/word_eqP; rewrite mkword_val0. Qed.
 
 (* ==================================================================== *)
 Section WordBits.
