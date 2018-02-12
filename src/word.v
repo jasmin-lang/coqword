@@ -462,10 +462,15 @@ Qed.
 
 (* ==================================================================== *)
 Lemma mkword0E {n : nat} : mkword n.+1 0 = 0%R :> word n.+1.
-Proof. by apply/word_eqP; rewrite mkword_val0. Qed.
+Proof. by apply/val_eqP. Qed.
 
 Lemma mkword1E {n : nat} : mkword n.+1 1 = 1%R :> word n.+1.
-Proof. by apply/word_eqP; rewrite mkword_val0. Qed.
+Proof. apply/val_eqP => /=. Qed.
+Proof. by apply/word_eqP; rewrite mkword_val1. Qed.
+
+(* ==================================================================== *)
+Lemma mkwordN1E {n : nat} : mkword n.+1 (-1)%Z = -1%R :> word n.+1.
+Proof. by apply/val_eqP. Qed.
 
 (* ==================================================================== *)
 Section WordBits.
