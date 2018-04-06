@@ -647,7 +647,7 @@ Section SignedRepr.
 Context (n : nat).
 
 Definition srepr (w : n.-word) :=
-  (if msb w then (val w - modulus n.-1)%R else val w)%Z.
+  (if msb w then (val w - modulus n)%R else val w)%Z.
 End SignedRepr.
 
 (* ==================================================================== *)
