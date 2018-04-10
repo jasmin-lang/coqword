@@ -801,6 +801,12 @@ Definition asr (w : n.-word) k := Z.shiftr (srepr w) (Z.of_nat k).
 
 Notation asl := lsl (only parsing).
 
+Definition rotl (w : n.-word) k :=
+  t2w [tuple wbit w ((i + (n - k %% n)) %% n) | i < n].
+
+Definition rotr (w : n.-word) k :=
+  t2w [tuple wbit w ((i + k) %% n) | i < n].
+
 Definition wbit_lsl (w : n.-word) i j :
   wbit (lsl w i) (i + j) = wbit w j.
 Proof.
@@ -837,3 +843,4 @@ Definition wbit_asl_hi (w : n.-word) i j :
   (j < i)%nat -> wbit (lsr w i) (n - j.+1) = msb w.
 Proof. Admitted.
 End WordShift.
+Print Module Z.
