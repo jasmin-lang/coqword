@@ -790,3 +790,50 @@ Lemma wxor_w0extend (p : nat) (w1 w2 : n.-word) :
   w0extend p (wxor w1 w2) = wxor (w0extend p w1) (w0extend p w2).
 Proof. by apply/eqP/eq_from_wbit => i. Qed.
 End WordLogicalsTh.
+
+(* ==================================================================== *)
+Section WordShift.
+Context (n : nat).
+
+Definition lsl (w : n.-word) k := Z.shiftl (urepr w) (Z.of_nat k).
+Definition lsr (w : n.-word) k := Z.shiftr (urepr w) (Z.of_nat k).
+Definition asr (w : n.-word) k := Z.shiftr (srepr w) (Z.of_nat k).
+
+Notation asl := lsl (only parsing).
+
+Definition wbit_lsl (w : n.-word) i j :
+  wbit (lsl w i) (i + j) = wbit w j.
+Proof.
+rewrite /wbit /lsl Z.shiftl_spec; first by apply/Zle_0_nat.
+by congr Z.testbit; rewrite Nat2Z.n2zD -addZE; ring.
+Qed.
+
+Definition wbit_lsl_lo (w : n.-word) i j :
+  (j < i)%nat -> wbit (lsl w i) j = false.
+Proof.
+move=> lt_ji; rewrite /wbit /lsl Z.shiftl_spec_low //.
+by apply/inj_lt/ltP.
+Qed.
+
+Definition wbit_rsl (w : n.-word) i j :
+  wbit (lsr w i) j = wbit w (i + j).
+Proof.
+rewrite /wbit /lsr Z.shiftr_spec; first by apply/Zle_0_nat.
+by rewrite Nat2Z.n2zD addZE addrC.
+Qed.
+
+Definition wbit_rsl_hi (w : n.-word) i j :
+  (j < i)%nat -> wbit (lsr w i) (n - j.+1) = false.
+Proof. Admitted.
+
+Definition wbit_asl (w : n.-word) i j :
+  wbit (lsr w i) j = wbit w (i + j).
+Proof.
+rewrite /wbit /lsr Z.shiftr_spec; first by apply/Zle_0_nat.
+by rewrite Nat2Z.n2zD addZE addrC.
+Qed.
+
+Definition wbit_asl_hi (w : n.-word) i j :
+  (j < i)%nat -> wbit (lsr w i) (n - j.+1) = msb w.
+Proof. Admitted.
+End WordShift.
