@@ -658,6 +658,17 @@ Context (n : nat).
 
 Definition srepr (w : n.-word) :=
   (if msb w then (val w - modulus n)%R else val w)%Z.
+
+Lemma sreprK : cancel srepr (mkword n).
+Proof.
+rewrite /srepr => w; case: ifP => _; last exact: ureprK.
+apply/val_eqP/eqP; case: w => w /=.
+move: (modulus n) (modulus_gt0 n) => m.
+rewrite /GRing.zero /GRing.add /= /GRing.opp /= => /ltzP hm /andP [/lezP hwl /ltzP hwh].
+elim_div. case; first Psatz.lia.
+move => h [] hm'; last Psatz.lia.
+have : (z = -1)%Z; Psatz.nia.
+Qed.
 End SignedRepr.
 
 (* ==================================================================== *)
