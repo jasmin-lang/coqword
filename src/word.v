@@ -1,6 +1,16 @@
 (* -------------------------------------------------------------------- *)
 From mathcomp Require Import all_ssreflect all_algebra zmodp.
 (* ------- *) Require Import Arith ZArith Omega ssrZ.
+Require Psatz.
+
+Ltac elim_div :=
+   unfold Zdiv, Zmod;
+     match goal with
+       |  H : context[ Zdiv_eucl ?X ?Y ] |-  _ =>
+          generalize (Z_div_mod_full X Y) ; destruct (Zdiv_eucl X Y)
+       |  |-  context[ Zdiv_eucl ?X ?Y ] =>
+          generalize (Z_div_mod_full X Y) ; destruct (Zdiv_eucl X Y)
+     end; unfold Remainder.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -768,6 +778,20 @@ Proof. by apply/Z.lor_spec. Qed.
 Lemma wxorE (w1 w2 : n.-word) i :
   wbit (wxor w1 w2) i = wbit w1 i (+) wbit w2 i.
 Proof. by rewrite /wbit Z.lxor_spec /=; do 2! case: Z.testbit. Qed.
+
+Lemma wN1E i : wbit (mkword n (-1)) i = (i < n).
+Proof.
+rewrite /wbit /= /modulus two_power_nat_equiv.
+have hi := Nat2Z.is_nonneg i.
+have hn := Nat2Z.is_nonneg n.
+have Hn : (0 < 2 ^ Z.of_nat n)%Z.
++ exact: Z.pow_pos_nonneg.
+replace (-1 mod 2 ^ Z.of_nat n)%Z with (Z.ones (Z.of_nat n)); first last.
++ rewrite Z.ones_equiv; elim_div; intuition; cut (z = -1)%Z; Psatz.nia.
+case: ltP => h.
++ apply: Z.ones_spec_low; Psatz.lia.
+apply: Z.ones_spec_high; Psatz.lia.
+Qed.
 
 End WordLogicals.
 
