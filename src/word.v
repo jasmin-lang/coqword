@@ -856,7 +856,9 @@ Context (n : nat).
 
 Definition lsl (w : n.-word) k := Z.shiftl (urepr w) (Z.of_nat k).
 Definition lsr (w : n.-word) k := Z.shiftr (urepr w) (Z.of_nat k).
-Definition asr (w : n.-word) k := Z.shiftr (srepr w) (Z.of_nat k).
+
+Definition asr (w : n.-word) k :=
+  Z.shiftr (urepr w) (Z.of_nat k).
 
 Notation asl := lsl (only parsing).
 
@@ -880,36 +882,20 @@ move=> lt_ji; rewrite /wbit /lsl Z.shiftl_spec_low //.
 by apply/inj_lt/ltP.
 Qed.
 
-Definition wbit_rsl (w : n.-word) i j :
+Definition wbit_lsr (w : n.-word) i j :
   wbit (lsr w i) j = wbit w (i + j).
 Proof.
 rewrite /wbit /lsr Z.shiftr_spec; first by apply/Zle_0_nat.
 by rewrite Nat2Z.n2zD addZE addrC.
 Qed.
 
-Definition wbit_rsl_hi (w : n.-word) i j :
+Definition wbit_lsr_hi (w : n.-word) i j :
   (j < i)%nat -> wbit (lsr w i) (n - j.+1) = false.
 Proof.
-rewrite wbit_rsl /wbit => /ltP h.
-case: ((w: Z) =P 0).
-+ move => ->; exact: Z.testbit_0_l.
-have : (0 <= w)%Z by [].
-case: w => w; rewrite /= /modulus two_power_nat_equiv
-  => /andP [_ /ltzP hh] hl hw.
-apply: Z.bits_above_log2 => //.
-apply: (Z.lt_le_trans _ (Z.of_nat n)); last first.
-+ rewrite /addn /addn_rec /subn /subn_rec; Psatz.lia.
-apply/Z.log2_lt_pow2 => //; Psatz.lia.
+move=> lt_ji; rewrite wbit_lsr wbit_word_ovf //.
+case: (ltnP j n) => [lt_jn|le_nj].
++ by rewrite addnBA // addnC - addnBA // leq_addr.
++ have := leq_trans le_nj (leqnSn _); rewrite -subn_eq0.
+  by move/eqP=> ->; rewrite addn0; apply/(leq_trans le_nj)/ltnW.
 Qed.
-
-Definition wbit_asl (w : n.-word) i j :
-  wbit (lsr w i) j = wbit w (i + j).
-Proof.
-rewrite /wbit /lsr Z.shiftr_spec; first by apply/Zle_0_nat.
-by rewrite Nat2Z.n2zD addZE addrC.
-Qed.
-
-Definition wbit_asl_hi (w : n.-word) i j :
-  (j < i)%nat -> wbit (lsr w i) (n - j.+1) = msb w.
-Proof. Admitted.
 End WordShift.
