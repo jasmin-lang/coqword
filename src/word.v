@@ -646,6 +646,13 @@ rewrite [_ w1]w2sumE [_ w2]w2sumE; apply/eqP/eq_bigr.
 by move=> /= i _; rewrite heq.
 Qed.
 
+(* -------------------------------------------------------------------- *)
+Lemma wbitwE (w : n.-word) (i : nat) : wbit w i  = nth false (w2t w) i.
+Proof.
+rewrite /w2t; case: (ltnP i n) => [lt_in|ge_in].
++ by rewrite -(tnth_nth _ _ (Ordinal lt_in)) tnth_map tnth_ord_tuple.
++ by rewrite nth_default ?size_tuple // wbit_word_ovf.
+Qed.
 End WordBits.
 
 (* ==================================================================== *)
@@ -660,30 +667,13 @@ Proof. exact: Z.bit0_odd. Qed.
 Lemma msbE n (w: n.-word) :
   msb w = (modulus n.-1 <= w)%R.
 Proof.
-have /iswordZP := isword_word w.
-rewrite /wbit /wsize; move: (toword w) => {w} w hrange.
-case: n hrange => [ | n /= hrange ].
-- change (modulus 0) with 1%Z => /= hrange.
-  by have -> : w = Z0 by Psatz.lia.
-have hn := Nat2Z.is_nonneg n.
-have hp := Z.pow_pos_nonneg 2  _ erefl hn.
-rewrite /modulus two_power_nat_equiv Nat2Z.inj_succ Z.pow_succ_r // in hrange.
-rewrite /modulus two_power_nat_equiv.
-move: (Z.of_nat _) hn hp hrange => {n} n hn hp hrange.
-apply/eqP; case: ssrZ.lezP => h; apply/eqP; last first.
-- apply/Z.testbit_false => //.
-  rewrite Z.div_small //.
-  Psatz.lia.
-apply/Z.testbit_true => //.
-elim_div; case => //.
-elim_div; case; first Psatz.lia.
-move => ?; subst w => - []; last Psatz.lia.
-move => hs ?; subst => - []; last Psatz.lia.
-move => h2.
-suff : (0 <> z0)%Z. Psatz.lia.
-move => ?; subst => {h2}.
-suff : (2 * z = 1)%Z. Psatz.lia.
-Psatz.nia.
+case: n w => [|n] /= w; rewrite /wsize /=.
++ have /andP[_] := isword_word w; rewrite ltrNge => /negbTE->.
+  by rewrite wbitwE // nth_default // size_tuple.
+apply/esym; rewrite [in LHS]w2sumE big_ord_recr /=.
+case: (wbit _); rewrite !Monoid.simpm modulusE.
++ by rewrite ler_addr; apply/sumr_ge0 => i _; apply/ge0_bit.
++ by apply/negbTE; rewrite -ltrNge le2Xn_sumbitsZ.
 Qed.
 
 (* ==================================================================== *)
