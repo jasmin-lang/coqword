@@ -695,6 +695,16 @@ have : (z = -1)%Z; Psatz.nia.
 Qed.
 End SignedRepr.
 
+(* -------------------------------------------------------------------- *)
+Lemma sreprE {n} (w : n.-word) : srepr w =
+  if (urepr w < modulus n.-1)%R then urepr w else (urepr w - modulus n)%R.
+Proof.
+case: n w => [|n] /= w.
++ have /andP[_] := isword_word w; rewrite modulusE expr0 => h.
+  by rewrite h /srepr msbE {1}modulusE expr0 lerNgt h.
++ by rewrite /srepr msbE /= lerNgt if_neg; case: ifP.
+Qed.
+
 (* ==================================================================== *)
 Section WSplit.
 Context (n : nat).
