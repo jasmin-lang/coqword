@@ -653,6 +653,40 @@ Notation lsb w := (wbit (toword w) 0).
 Notation msb w := (wbit (toword w) (wsize w).-1).
 
 (* ==================================================================== *)
+Lemma lsbE n (w: n.-word) :
+  lsb w = Z.odd w.
+Proof. exact: Z.bit0_odd. Qed.
+
+Lemma msbE n (w: n.-word) :
+  msb w = (modulus n.-1 <= w)%R.
+Proof.
+have /iswordZP := isword_word w.
+rewrite /wbit /wsize; move: (toword w) => {w} w hrange.
+case: n hrange => [ | n /= hrange ].
+- change (modulus 0) with 1%Z => /= hrange.
+  by have -> : w = Z0 by Psatz.lia.
+have hn := Nat2Z.is_nonneg n.
+have hp := Z.pow_pos_nonneg 2  _ erefl hn.
+rewrite /modulus two_power_nat_equiv Nat2Z.inj_succ Z.pow_succ_r // in hrange.
+rewrite /modulus two_power_nat_equiv.
+move: (Z.of_nat _) hn hp hrange => {n} n hn hp hrange.
+apply/eqP; case: ssrZ.lezP => h; apply/eqP; last first.
+- apply/Z.testbit_false => //.
+  rewrite Z.div_small //.
+  Psatz.lia.
+apply/Z.testbit_true => //.
+elim_div; case => //.
+elim_div; case; first Psatz.lia.
+move => ?; subst w => - []; last Psatz.lia.
+move => hs ?; subst => - []; last Psatz.lia.
+move => h2.
+suff : (0 <> z0)%Z. Psatz.lia.
+move => ?; subst => {h2}.
+suff : (2 * z = 1)%Z. Psatz.lia.
+Psatz.nia.
+Qed.
+
+(* ==================================================================== *)
 Section SignedRepr.
 Context (n : nat).
 
