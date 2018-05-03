@@ -71,6 +71,10 @@ Canonical word_countType := Eval hnf in CountType word word_countMixin.
 End WordDef.
 
 (* -------------------------------------------------------------------- *)
+Lemma modulusS {n} : modulus n.+1 = (modulus n *+ 2)%R.
+Proof. by rewrite [in LHS]modulusE exprS mulr_natl -modulusE. Qed.
+
+(* -------------------------------------------------------------------- *)
 Notation "n .-word" := (word n)
   (at level 2, format "n .-word") : type_scope.
 
@@ -104,6 +108,10 @@ Proof. by case: w => w; rewrite /urepr /= => /andP[]. Qed.
 (* -------------------------------------------------------------------- *)
 Lemma urepr_isword (w : word n) : isword (urepr w).
 Proof. by rewrite urepr_ge0 urepr_ltmod. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma urepr_word (w : n.-word) : urepr w = w :> Z.
+Proof. by []. Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma ureprK : cancel urepr mkword.
@@ -482,6 +490,18 @@ Lemma mkwordN1E {n : nat} : mkword n.+1 (-1)%Z = -1%R :> word n.+1.
 Proof. by apply/val_eqP. Qed.
 
 (* ==================================================================== *)
+Lemma addwE {n} (w1 w2 : n.-word) :
+  urepr (w1 + w2)%R = ((urepr w1 + urepr w2)%R mod modulus n)%Z.
+Proof. by []. Qed.
+
+Lemma subwE {n} (w1 w2 : n.-word) :
+  urepr (w1 - w2)%R = ((urepr w1 - urepr w2)%R mod modulus n)%Z.
+Proof.
+rewrite addwE {1}/GRing.opp /= /opp_word mkwordK.
+by rewrite -!(addZE, oppZE) Zplus_mod_idemp_r.
+Qed.
+
+(* ==================================================================== *)
 Section WordBits.
 Context (n : nat).
 
@@ -703,6 +723,26 @@ case: n w => [|n] /= w.
 + have /andP[_] := isword_word w; rewrite modulusE expr0 => h.
   by rewrite h /srepr msbE {1}modulusE expr0 lerNgt h.
 + by rewrite /srepr msbE /= lerNgt if_neg; case: ifP.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wltuE {n} (w1 w2: n.-word) :
+  (urepr w1 < urepr w2)%R = (urepr (w1 - w2) != (urepr w1 - urepr w2))%R.
+Proof.
+apply/esym; case: ltrP; last first.
++ move=> ge; apply/negbTE; rewrite negbK subwE Zmod_small //.
+  split; first by apply/lezP; rewrite subr_ge0.
+  apply/ltzP; rewrite -[modulus n]subr0 ltr_le_sub //.
+  * by rewrite urepr_ltmod. * by rewrite urepr_ge0.
++ move=> lt; rewrite subwE -(@Z_mod_plus _ 1).
+  * by apply/Z.lt_gt/ltzP/modulus_gt0.
+  rewrite !(addZE, mulZE) mul1r Zmod_small; first split.
+  * apply/lezP; rewrite addrC -opprB subr_ge0.
+    rewrite ler_subl_addr ler_paddr //.
+    * by rewrite urepr_ge0. * by rewrite ltrW ?urepr_ltmod.
+  * by apply/ltzP; rewrite gtr_addr subr_lt0.
+  * apply/eqP; rewrite -[X in _=X]addr0 => /addrI.
+    by move/eqP; rewrite gtr_eqF.
 Qed.
 
 (* ==================================================================== *)
