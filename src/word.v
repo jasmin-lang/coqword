@@ -125,6 +125,10 @@ Lemma mkwordK (z : Z) : urepr (mkword z) = (z mod modulus n)%Z.
 Proof. by []. Qed.
 
 (* -------------------------------------------------------------------- *)
+Lemma mkword_valK (z : Z) : mkword z = (z mod modulus n)%Z :> Z.
+Proof. by []. Qed.
+
+(* -------------------------------------------------------------------- *)
 Lemma isword_ofnatZP (k : nat) :
   reflect (0 <= Z.of_nat k < modulus n)%Z (k < 2 ^ n).
 Proof. apply: (iffP idP) => lt.
@@ -673,6 +677,29 @@ rewrite /w2t; case: (ltnP i n) => [lt_in|ge_in].
 + by rewrite -(tnth_nth _ _ (Ordinal lt_in)) tnth_map tnth_ord_tuple.
 + by rewrite nth_default ?size_tuple // wbit_word_ovf.
 Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wbit_mod2Xn (w : Z) (m k : nat) :
+  (0 <= w)%R -> (k < m)%nat ->
+    wbit (w mod modulus m) k = wbit w k.
+Proof. Admitted.
+
+(* -------------------------------------------------------------------- *)
+Lemma wbit_t2wE (w : n.-tuple bool) k :
+  wbit (t2w w) k = nth false w k.
+Proof. by rewrite wbitwE t2wK. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wbit_t2wFE (F : nat -> bool) k :
+  wbit (t2w [tuple F i | i < n]) k = (k < n) && F k.
+Proof.
+rewrite wbit_t2wE; case: ltnP; rewrite [_ && _]/=.
++ move=> lt_kn; rewrite -(tnth_nth _ _ (Ordinal lt_kn)).
+  by rewrite tnth_map tnth_ord_tuple.
++ move=> le_nk; rewrite nth_default //.
+  by rewrite size_map val_ord_tuple size_enum_ord.
+Qed.
+
 End WordBits.
 
 (* ==================================================================== *)
@@ -904,11 +931,9 @@ End WordLogicalsTh.
 Section WordShift.
 Context (n : nat).
 
-Definition lsl (w : n.-word) k := Z.shiftl (urepr w) (Z.of_nat k).
-Definition lsr (w : n.-word) k := Z.shiftr (urepr w) (Z.of_nat k).
-
-Definition asr (w : n.-word) k :=
-  Z.shiftr (urepr w) (Z.of_nat k).
+Definition lsl (w : n.-word) k := mkword n (Z.shiftl (urepr w) (Z.of_nat k)).
+Definition lsr (w : n.-word) k := mkword n (Z.shiftr (urepr w) (Z.of_nat k)).
+Definition asr (w : n.-word) k := mkword n (Z.shiftr (srepr w) (Z.of_nat k)).
 
 Notation asl := lsl (only parsing).
 
@@ -918,34 +943,68 @@ Definition rotl (w : n.-word) k :=
 Definition rotr (w : n.-word) k :=
   t2w [tuple wbit w ((i + k) %% n) | i < n].
 
-Definition wbit_lsl (w : n.-word) i j :
-  wbit (lsl w i) (i + j) = wbit w j.
+Lemma lslE (w : n.-word) k :
+  lsl w k = t2w [tuple (k <= i) && wbit w (i - k) | i < n].
 Proof.
-rewrite /wbit /lsl Z.shiftl_spec; first by apply/Zle_0_nat.
-by congr Z.testbit; rewrite Nat2Z.n2zD -addZE; ring.
+apply/eqP/eq_from_wbit => i; rewrite [in RHS]wbit_t2wE.
+rewrite -tnth_nth tnth_map tnth_ord_tuple.
+rewrite /lsl mkword_valK wbit_mod2Xn ?{1}/wbit //.
++ by apply/leZP; rewrite Z.shiftl_nonneg.
+rewrite Z.shiftl_spec; first by apply/Zle_0_nat.
+case: leqP => /= => [le_ki|lt_ik].
++ by rewrite subZE -Nat2Z.n2zB.
++ by rewrite Z.testbit_neg_r // Z.lt_sub_0; apply/inj_lt/ltP.
 Qed.
 
-Definition wbit_lsl_lo (w : n.-word) i j :
-  (j < i)%nat -> wbit (lsl w i) j = false.
+Lemma lsrE (w : n.-word) k :
+  lsr w k = t2w [tuple wbit w (i + k) | i < n].
 Proof.
-move=> lt_ji; rewrite /wbit /lsl Z.shiftl_spec_low //.
-by apply/inj_lt/ltP.
+apply/eqP/eq_from_wbit => i; rewrite [in RHS]wbit_t2wE.
+rewrite -tnth_nth tnth_map tnth_ord_tuple.
+rewrite /lsr mkword_valK wbit_mod2Xn ?{1}/wbit //.
++ by apply/leZP; rewrite Z.shiftr_nonneg.
+rewrite Z.shiftr_spec; first by apply/Zle_0_nat.
+by rewrite addZE -Nat2Z.n2zD -/(wbit _ _).
 Qed.
 
-Definition wbit_lsr (w : n.-word) i j :
+Lemma wbit_lsl (w : n.-word) i j :
+  wbit (lsl w i) (i + j) = (i + j < n) && wbit w j.
+Proof. 
+rewrite lslE; pose F k := (i <= k) && wbit w (k - i).
+by rewrite (wbit_t2wFE _ F) {}/F leq_addr /= addnC addnK.
+Qed.
+
+Lemma wbit_lsl_lo (w : n.-word) i j :
+  j < i -> wbit (lsl w i) j = false.
+Proof.
+move=> lt_ji; rewrite lslE; pose F k := (i <= k) && wbit w (k - i).
+by rewrite (wbit_t2wFE _ F) {}/F [i <= j]leqNgt lt_ji andbF.
+Qed.
+
+Lemma wbit_lsr (w : n.-word) i j :
   wbit (lsr w i) j = wbit w (i + j).
 Proof.
-rewrite /wbit /lsr Z.shiftr_spec; first by apply/Zle_0_nat.
-by rewrite Nat2Z.n2zD addZE addrC.
+rewrite lsrE; pose F k := wbit w (k + i).
+rewrite (wbit_t2wFE _ F) {}/F addnC andb_idl //.
+apply/contraLR; rewrite -leqNgt => le_nj.
+by rewrite wbit_word_ovf // (leq_trans le_nj) // leq_addl.
 Qed.
 
-Definition wbit_lsr_hi (w : n.-word) i j :
-  (j < i)%nat -> wbit (lsr w i) (n - j.+1) = false.
+Lemma wbit_lsr_hi (w : n.-word) i j :
+  j < i -> wbit (lsr w i) (n - j.+1) = false.
 Proof.
-move=> lt_ji; rewrite wbit_lsr wbit_word_ovf //.
-case: (ltnP j n) => [lt_jn|le_nj].
-+ by rewrite addnBA // addnC - addnBA // leq_addr.
-+ have := leq_trans le_nj (leqnSn _); rewrite -subn_eq0.
-  by move/eqP=> ->; rewrite addn0; apply/(leq_trans le_nj)/ltnW.
+move=> lt_ij; rewrite wbit_lsr wbit_word_ovf //; case: (ltnP j n).
++ by move=> lt_jn; rewrite addnBA // -addnC -addnBA ?leq_addr.
++ move=> le_nj; rewrite (leq_trans le_nj) 1?ltnW //.
+  by rewrite (leq_trans lt_ij) // leq_addr.
 Qed.
+
+Lemma wbit_asr (w : n.-word) i j :
+  wbit (asr w i) j = wbit w (i + j).
+Proof. Admitted.
+
+Lemma wbit_asr_hi (w : n.-word) i j :
+  (j < i)%nat -> wbit (asr w i) j = wbit w (i + j).
+Proof. Admitted.
+
 End WordShift.
