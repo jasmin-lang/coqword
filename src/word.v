@@ -677,20 +677,22 @@ rewrite /w2t; case: (ltnP i n) => [lt_in|ge_in].
 + by rewrite -(tnth_nth _ _ (Ordinal lt_in)) tnth_map tnth_ord_tuple.
 + by rewrite nth_default ?size_tuple // wbit_word_ovf.
 Qed.
+End WordBits.
 
 (* -------------------------------------------------------------------- *)
 Lemma wbit_mod2Xn (w : Z) (m k : nat) :
   (0 <= w)%R -> (k < m)%nat ->
     wbit (w mod modulus m) k = wbit w k.
-Proof. Admitted.
+Proof.
+Admitted.
 
 (* -------------------------------------------------------------------- *)
-Lemma wbit_t2wE (w : n.-tuple bool) k :
+Lemma wbit_t2wE {n} (w : n.-tuple bool) k :
   wbit (t2w w) k = nth false w k.
 Proof. by rewrite wbitwE t2wK. Qed.
 
 (* -------------------------------------------------------------------- *)
-Lemma wbit_t2wFE (F : nat -> bool) k :
+Lemma wbit_t2wFE {n} (F : nat -> bool) k :
   wbit (t2w [tuple F i | i < n]) k = (k < n) && F k.
 Proof.
 rewrite wbit_t2wE; case: ltnP; rewrite [_ && _]/=.
@@ -699,8 +701,6 @@ rewrite wbit_t2wE; case: ltnP; rewrite [_ && _]/=.
 + move=> le_nk; rewrite nth_default //.
   by rewrite size_map val_ord_tuple size_enum_ord.
 Qed.
-
-End WordBits.
 
 (* ==================================================================== *)
 Notation lsb w := (wbit (toword w) 0).
@@ -732,13 +732,11 @@ Definition srepr (w : n.-word) :=
 
 Lemma sreprK : cancel srepr (mkword n).
 Proof.
-rewrite /srepr => w; case: ifP => _; last exact: ureprK.
+rewrite /srepr => w; case: ifP => _; last exact/ureprK.
 apply/val_eqP/eqP; case: w => w /=.
-move: (modulus n) (modulus_gt0 n) => m.
-rewrite /GRing.zero /GRing.add /= /GRing.opp /= => /ltzP hm /andP [/lezP hwl /ltzP hwh].
-elim_div. case; first Psatz.lia.
-move => h [] hm'; last Psatz.lia.
-have : (z = -1)%Z; Psatz.nia.
+rewrite -mulrN1 mulrC -mulZE -addZE Z_mod_plus_full.
+move/andP; rewrite -!(rwP ltzP, rwP lezP) => h.
+by rewrite Z.mod_small.
 Qed.
 End SignedRepr.
 
@@ -971,21 +969,21 @@ Lemma wbit_lsl (w : n.-word) i j :
   wbit (lsl w i) (i + j) = (i + j < n) && wbit w j.
 Proof. 
 rewrite lslE; pose F k := (i <= k) && wbit w (k - i).
-by rewrite (wbit_t2wFE _ F) {}/F leq_addr /= addnC addnK.
+by rewrite (wbit_t2wFE F) {}/F leq_addr /= addnC addnK.
 Qed.
 
 Lemma wbit_lsl_lo (w : n.-word) i j :
   j < i -> wbit (lsl w i) j = false.
 Proof.
 move=> lt_ji; rewrite lslE; pose F k := (i <= k) && wbit w (k - i).
-by rewrite (wbit_t2wFE _ F) {}/F [i <= j]leqNgt lt_ji andbF.
+by rewrite (wbit_t2wFE F) {}/F [i <= j]leqNgt lt_ji andbF.
 Qed.
 
 Lemma wbit_lsr (w : n.-word) i j :
   wbit (lsr w i) j = wbit w (i + j).
 Proof.
 rewrite lsrE; pose F k := wbit w (k + i).
-rewrite (wbit_t2wFE _ F) {}/F addnC andb_idl //.
+rewrite (wbit_t2wFE F) {}/F addnC andb_idl //.
 apply/contraLR; rewrite -leqNgt => le_nj.
 by rewrite wbit_word_ovf // (leq_trans le_nj) // leq_addl.
 Qed.
@@ -999,12 +997,71 @@ move=> lt_ij; rewrite wbit_lsr wbit_word_ovf //; case: (ltnP j n).
   by rewrite (leq_trans lt_ij) // leq_addr.
 Qed.
 
-Lemma wbit_asr (w : n.-word) i j :
-  wbit (asr w i) j = wbit w (i + j).
-Proof. Admitted.
+Lemma asrE (w : n.-word) k : asr w k =
+  t2w [tuple if i + k < n then wbit w (i + k) else msb w | i < n].
+Proof.
+apply/eqP/eq_from_wbit => i; rewrite [in RHS]wbit_t2wE.
+rewrite -tnth_nth tnth_map tnth_ord_tuple.
+rewrite /asr mkword_valK sreprE msbE lerNgt; case: ifPn => /=.
++ move=> _; rewrite wbit_mod2Xn ?{1}/wbit //.
+  * by apply/leZP; rewrite Z.shiftr_nonneg.
+  rewrite Z.shiftr_spec; first by apply/Zle_0_nat.
+  rewrite addZE -Nat2Z.n2zD; case: ifPn => //; rewrite -leqNgt.
+  by move=> ovf; rewrite -/(wbit _ _) wbit_word_ovf.
+rewrite -lerNgt => le; rewrite -(@Z_mod_plus_full _ 1).
+rewrite !(addZE, mulZE) mul1r wbit_mod2Xn ?{1}/wbit //.
++ rewrite -ler_subl_addr sub0r /Z.shiftr /=.
+  set x := (urepr _ - _)%R; have gex: (-modulus n <= x)%R.
+  * by rewrite -ler_subl_addr opprK addrC subrr urepr_ge0.
+  case: k => //=; elim=> /= [|k ih].
+  * rewrite Z.div2_div -(rwP lezP); apply/Z.div_le_lower_bound => //.
+    by apply/lezP; rewrite mulZE (ler_trans _ gex) // ler_nemull.
+  * rewrite Pos.iter_succ Z.div2_div -(rwP lezP).
+    apply/Z.div_le_lower_bound/lezP => //; rewrite mulZE.
+    by rewrite (ler_trans _ ih) // ler_nemull.
+rewrite -(@Z.mod_pow2_bits_low _ n) /=; first by apply/inj_lt/ltP.
+have h: (2 ^ n = modulus n)%Z by rewrite /modulus two_power_nat_equiv.
+rewrite h -Zplus_mod_idemp_r Z_mod_same_full Z.add_0_r.
+rewrite -[X in (_ mod X)%Z]h Z.mod_pow2_bits_low.
++ by apply/inj_lt/ltP.
+rewrite Z.shiftr_spec; first by apply/Zle_0_nat.
+rewrite addZE -Nat2Z.n2zD; case: ifPn.
++ move=> lt_iDk_n; rewrite -(@Z.mod_pow2_bits_low _ n) /=.
+  * by apply/inj_lt/ltP.
+  rewrite h; rewrite -mulrN1 mulrC -addZE -mulZE.
+  rewrite Z_mod_plus_full Zmod_small // !(rwP lezP, rwP ltzP).
+  by rewrite (rwP andP) isword_word.
++ rewrite -leqNgt; move=> le_n_iDk; have: (1 <= modulus n - urepr w)%R.
+  * rewrite ler_subr_addl; apply/leZP/leZE; rewrite rmorphD.
+    by rewrite lez_addr1; apply/ltZE/ltZP/urepr_ltmod.
+  rewrite ler_eqVlt => /orP[/eqP|lt].
+  * move/(congr1 -%R); rewrite opprB => <-.
+    by rewrite Z.bits_opp ?Z.bits_0 //; apply/Zle_0_nat.
+  apply/Z.bits_above_log2_neg.
+  * by apply/ltzP; rewrite subr_lt0 urepr_ltmod.
+  * apply/Z.log2_lt_pow2; apply/ltzP.
+    - rewrite -Z.sub_1_r !(subZE, addZE, oppZE).
+      by rewrite ltr_subr_addl addr0 opprB.
+    - apply/(@ltr_le_trans _ (modulus n)); last first.
+      + by rewrite -h; apply/lezP/Z.pow_le_mono_r/inj_le/leP.
+      rewrite -Z.sub_1_r !(subZE, oppZE) opprB -addrA -opprD.
+      by rewrite ltr_subl_addr ltr_addl ltr_paddl // urepr_ge0.
+Qed.
 
 Lemma wbit_asr_hi (w : n.-word) i j :
-  (j < i)%nat -> wbit (asr w i) j = wbit w (i + j).
-Proof. Admitted.
-
+  (j < i)%nat -> wbit (asr w i) (n - j.+1) = msb w.
+Proof.
+pose F k := if k + i < n then wbit w (k + i) else msb w.
+move=> lt_ji; rewrite asrE (wbit_t2wFE F) {}/F addnC; case: (ltnP j n).
++ move=> lt_jn; rewrite {1}subnS prednK 1?subn_gt0 //.
+  rewrite leq_subLR leq_addl /= addnBA // addnC -addnBA //.
+  by rewrite ltnNge leq_addr.
++ move=> le_nj; have: n - j.+1 = 0.
+    by apply/eqP; rewrite subn_eq0 (leq_trans le_nj).
+  move=> -> /=; rewrite addn0 andbC ltnNge ltnW /=.
+    by apply/(leq_ltn_trans le_nj).
+  rewrite andb_idr // msbE; case: n w => //=.
+  move=> w; case/andP: (isword_word w) => _.
+  by rewrite ltrNge => /negbTE ->.
+Qed.
 End WordShift.
