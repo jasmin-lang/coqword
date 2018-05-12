@@ -41,6 +41,9 @@ Proof. by elim: n => // n ih; rewrite two_power_nat_S exprS ih. Qed.
 Lemma modulusE : modulus = 2%:R^+nbits.
 Proof. by apply/two_power_natE. Qed.
 
+Lemma modulusZE : modulus = (2 ^ nbits)%Z.
+Proof. by rewrite /modulus two_power_nat_equiv. Qed.
+
 Lemma modulus_gt0 : (0 < modulus)%R.
 Proof.
 rewrite modulusE; elim: nbits => [|n ih].
@@ -71,8 +74,12 @@ Canonical word_countType := Eval hnf in CountType word word_countMixin.
 End WordDef.
 
 (* -------------------------------------------------------------------- *)
-Lemma modulusS {n} : modulus n.+1 = (modulus n *+ 2)%R.
+Lemma modulusS n : modulus n.+1 = (modulus n *+ 2)%R.
 Proof. by rewrite [in LHS]modulusE exprS mulr_natl -modulusE. Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma modulusD n p : modulus (n + p) = (modulus n * modulus p)%R.
+Proof. by rewrite !modulusE exprD. Qed.
 
 (* -------------------------------------------------------------------- *)
 Notation "n .-word" := (word n)
@@ -537,6 +544,9 @@ Proof. by rewrite mulr_ge0 // ?exprn_ge0 // ler0n. Qed.
 Definition wbit (z : Z) (n : nat) : bool :=
   nosimpl (Z.testbit z (Z.of_nat n)).
 
+Lemma wbit0 i : wbit 0 i = false.
+Proof. by rewrite /wbit Z.testbit_0_l. Qed.
+
 Lemma wbitE (z : Z) k :
   (0 <= z)%R -> wbit z k = odd (Z.to_nat z %/ (2 ^ k)).
 Proof.
@@ -700,6 +710,14 @@ rewrite wbit_t2wE; case: ltnP; rewrite [_ && _]/=.
   by rewrite tnth_map tnth_ord_tuple.
 + move=> le_nk; rewrite nth_default //.
   by rewrite size_map val_ord_tuple size_enum_ord.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wbit_mkword {n} (z : Z) (i : 'I_n) :
+  wbit (mkword n z) i = wbit z i.
+Proof.
+rewrite /wbit [toword _]mkwordK modulusZE.
+by rewrite Z.mod_pow2_bits_low //; apply/inj_lt/ltP.
 Qed.
 
 (* ==================================================================== *)
@@ -1065,3 +1083,58 @@ move=> lt_ji; rewrite asrE (wbit_t2wFE F) {}/F addnC; case: (ltnP j n).
   by rewrite ltrNge => /negbTE ->.
 Qed.
 End WordShift.
+
+(* -------------------------------------------------------------------- *)
+Section SubWord.
+Context {n : nat}.
+
+Definition subword (i l : nat) (w : n.-word) := mkword l (lsr w i).
+
+Lemma subwordE i l w : subword i l w =
+  t2w [tuple wbit w (j + i) | j < l].
+Proof.
+apply/eqP/eq_from_wbit => j; rewrite /subword lsrE.
+rewrite wbit_mkword !wbitwE !t2wK; case: (ltnP j n).
+  move=> lt_jn; rewrite -{1}[val j]/(val (Ordinal lt_jn)).
+  by rewrite -!tnth_nth !tnth_map !tnth_ord_tuple.
+move=> le_nj; rewrite nth_default ?size_tuple // -tnth_nth.
+rewrite tnth_map tnth_ord_tuple wbit_word_ovf //.
+by rewrite (leq_trans le_nj) // leq_addr.
+Qed.
+
+Fixpoint wcat_r (s : seq n.-word) : Z :=
+  if s is w :: s then
+    Z.lor (urepr w) (Z.shiftl (wcat_r s) n)
+  else 0%Z.
+
+Lemma wcat_subproof {p} (s : p.-tuple n.-word) :
+  (0 <= wcat_r s < modulus (n * p))%R.
+Proof.
+case: s => /= s /eqP <-; elim: s => //= w s ih.
+rewrite -(rwP andP) -!(rwP lezP, rwP ltzP) => [:h]; split.
++ abstract: h; apply/Z.lor_nonneg; split.
+  * by apply/lezP/urepr_ge0.
+  * by apply/Z.shiftl_nonneg/lezP; case/andP: ih.
+set z := Z.lor _ _; set k := _ * _.+1.
+rewrite [z](@z2sumE k) -?(rwP lezP) // => {h}; last first.
+  by rewrite modulusE (rwP ltzP) le2Xn_sumbitsZ.
+move=> i le_ki; have le_ni: n <= i.
+  move: le_ki; rewrite {}/k mulnS; apply/contraLR.
+  by rewrite -!ltnNge => h; apply/ltn_addr.
+rewrite {}/z /wbit Z.lor_spec.
+rewrite Z.shiftl_spec; first by apply/Zle_0_nat.
+rewrite -!/(wbit _ _) wbit_word_ovf //=.
+rewrite -Nat2Z.inj_sub; first by apply/leP.
+case/andP: ih => ih1 ih2; rewrite ler_eqVlt in ih1.
+case/orP: ih1 => [/eqP<-|ih1]; first by rewrite Z.testbit_0_l.
+apply/negbT/Z.bits_above_log2; first by apply/lezP/ltrW.
+apply/Z.log2_lt_pow2=> //; first by apply/ltzP.
+rewrite -modulusZE (rwP ltzP) (ltr_le_trans ih2) //.
+rewrite !modulusZE; apply/lezP/Z.pow_le_mono_r => //.
+apply/inj_le/leP; rewrite -ltnS -subSn // ltn_subRL ltnS.
+by rewrite (leq_trans _ le_ki) // {le_ki}/k mulnS.
+Qed.
+
+Definition wcat {p} (s : p.-tuple n.-word) :=
+  mkWord (wcat_subproof s).
+End SubWord.
