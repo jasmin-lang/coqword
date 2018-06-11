@@ -494,7 +494,7 @@ by rewrite exprS ler_pemulr // exprn_ege1.
 Qed.
 
 (* ==================================================================== *)
-Lemma mkword0E {n : nat} : mkword n.+1 0 = 0%R :> word n.+1.
+Lemma mkword0E {n : nat} : mkword n 0 = 0%R :> word n.
 Proof. by apply/val_eqP. Qed.
 
 Lemma mkword1E {n : nat} : mkword n.+1 1 = 1%R :> word n.+1.
@@ -514,6 +514,31 @@ Lemma subwE {n} (w1 w2 : n.-word) :
 Proof.
 rewrite addwE {1}/GRing.opp /= /opp_word mkwordK.
 by rewrite -!(addZE, oppZE) Zplus_mod_idemp_r.
+Qed.
+
+Lemma subw_modE {n} (w1 w2 : n.-word) :
+  (urepr (w1 - w2)%R =
+    urepr w1 - urepr w2 + (modulus n) *+ (urepr w1 < urepr w2)%R)%R.
+Proof.
+case: (w2 =P 0%R) => [->|/eqP nz_w2].
++ by rewrite !subr0 ltrNge urepr_ge0 addr0.
+have /= {nz_w2} gt0_w2: (0%R < val w2)%R.
++ rewrite ltr_neqAle urepr_ge0 andbT eq_sym.
+  apply/contra_neq: nz_w2; pose z : n.-word := 0%R.
+  by rewrite [X in val _ = X](_ : _ = val z) // => /val_inj.
+rewrite /GRing.opp /GRing.add /= /add_word /opp_word /urepr /=.
+rewrite Zplus_mod_idemp_r !(oppZE, addZE).
+case: ltrP; rewrite (addr0, mulr1n); last first.
++ move=> le_w2_w1; rewrite Z.mod_small //; split.
+  * by rewrite (rwP lezP) subr_ge0.
+  * rewrite (rwP ltzP) ltr_subl_addr.
+    by rewrite (ltr_trans (urepr_ltmod _)) ?ltr_addl.
++ move=> lt_w1_w2; rewrite -(@Z_mod_plus_full _ 1) Z.mul_1_l.
+  rewrite Z.mod_small //; rewrite !(rwP lezP, rwP ltzP); split.
+  * rewrite addZE addrAC subr_ge0; apply/ltrW.
+    rewrite (ltr_le_trans (urepr_ltmod _)) //.
+    by rewrite ler_addr urepr_ge0.
+  * by rewrite addZE -ltr_subr_addl opprB ltr_addl subr_gt0.
 Qed.
 
 (* -------------------------------------------------------------------- *)
@@ -856,6 +881,19 @@ move/andP; rewrite -!(rwP ltzP, rwP lezP) => h.
 by rewrite Z.mod_small.
 Qed.
 End SignedRepr.
+
+Lemma srepr_inj {n} : injective (@srepr n).
+Proof.
+case: n => [|n].
++ by move=> w1 w2; rewrite [w1]word_sz_eq0 // [w2]word_sz_eq0.
+move=> w1 w2; rewrite /srepr !msbE /=; do! case: ifPn.
++ by move=> _ _ /addIr /val_inj.
++ rewrite -ltrNge => /= h2 h1 /eqP; rewrite ltr_eqF //.
+  by rewrite (@ltr_le_trans _ 0) ?urepr_ge0 // subr_lt0 urepr_ltmod.
++ rewrite -ltrNge => /= h2 h1 /eqP; rewrite gtr_eqF //.
+  by rewrite (@ltr_le_trans _ 0) ?urepr_ge0 // subr_lt0 urepr_ltmod.
++ by move=> _ _ /val_inj.
+Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma sreprE {n} (w : n.-word) : srepr w =
