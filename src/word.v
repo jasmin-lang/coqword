@@ -729,13 +729,6 @@ Qed.
 End WordBits.
 
 (* -------------------------------------------------------------------- *)
-Lemma wbit_mod2Xn (w : Z) (m k : nat) :
-  (0 <= w)%R -> (k < m)%nat ->
-    wbit (w mod modulus m) k = wbit w k.
-Proof.
-Admitted.
-
-(* -------------------------------------------------------------------- *)
 Lemma wbit_t2wE {n} (w : n.-tuple bool) k :
   wbit (t2w w) k = nth false w k.
 Proof. by rewrite wbitwE t2wK. Qed.
@@ -813,6 +806,7 @@ apply/hasPn=> /= i _; have := hex ord0 (lift ord0 i) _ j.
 by rewrite w0j /= => ->.
 Qed.
 
+(* -------------------------------------------------------------------- *)
 Lemma wbit_sum2XM {n p} (F : 'I_p -> n.-word) (q : 'I_p) (r : 'I_n) :
     wbit (\sum_(i < p) 2%:R ^+ (n * i) * urepr (F i))%R (q * n + r)
   = wbit (F q) r.
@@ -842,6 +836,15 @@ rewrite -val_eqE /= in ne_iq; have lt_iq: i < q.
 rewrite -addnBA; first by rewrite leq_mul2r (ltnW lt_iq) orbT.
 rewrite -mulnBl (@leq_trans (r + n)) ?leq_addl //.
 by rewrite leq_add2l leq_pmull // subn_gt0.
+Qed.
+
+(* -------------------------------------------------------------------- *)
+Lemma wbit_mod2Xn (w : Z) (m k : nat) :
+  (0 <= w)%R -> (k < m)%nat ->
+    wbit (w mod modulus m) k = wbit w k.
+Proof.
+move=> ge0_x lt_km; rewrite /wbit modulusZE Z.mod_pow2_bits_low //.
+by rewrite int_of_Z_PoszE; apply/inj_lt/ltP.
 Qed.
 
 (* ==================================================================== *)
