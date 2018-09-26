@@ -34,3 +34,4 @@ Makefile.coq.bak
 Makefile.coq.conf
 
 /attic/
+.coqdeps.d
