@@ -4,12 +4,12 @@ From mathcomp Require Import all_ssreflect all_algebra zmodp.
 Require Psatz.
 
 Ltac elim_div :=
-   unfold Zdiv, Zmod;
+   unfold Z.div, Zmod;
      match goal with
-       |  H : context[ Zdiv_eucl ?X ?Y ] |-  _ =>
-          generalize (Z_div_mod_full X Y) ; destruct (Zdiv_eucl X Y)
-       |  |-  context[ Zdiv_eucl ?X ?Y ] =>
-          generalize (Z_div_mod_full X Y) ; destruct (Zdiv_eucl X Y)
+       |  H : context[ Z.div_eucl ?X ?Y ] |-  _ =>
+          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
+       |  |-  context[ Z.div_eucl ?X ?Y ] =>
+          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
      end; unfold Remainder.
 
 Set Implicit Arguments.
