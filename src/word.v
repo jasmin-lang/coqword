@@ -548,7 +548,7 @@ move=> n_eq0; move: (isword_word w); rewrite [X in modulus X]n_eq0.
 rewrite modulus0 -(rwP andP) -!(rwP lezP, rwP ltzP) !lteZE.
 rewrite int_to_ZK -[1%:Z]add0r ltz_addr1.
 rewrite (rwP andP) -eqr_le => /eqP /(can_inj Z_to_intK).
-by move/(val_inj word0) => <-.
+by move/(@val_inj _ _ _ word0) => <-.
 Qed.
 
 (* ==================================================================== *)
