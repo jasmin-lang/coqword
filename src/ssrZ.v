@@ -371,7 +371,8 @@ Qed.
 Lemma z2n_natmul (z : Z) n :
   (0 <= z)%R -> Z.to_nat (z *+ n) = (Z.to_nat z * n)%nat.
 Proof.
-move=> ge0_z; elim: n => // n ih; rewrite mulrS.
+move=> ge0_z; elim: n; first by rewrite muln0.
+move=> n ih; rewrite mulrS.
 by rewrite z2nD ?mulrn_wge0 // ih mulnS.
 Qed.
 
