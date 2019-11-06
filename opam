@@ -1,7 +1,11 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name: "coq-word"
 version: "dev"
+synopsis: "A Coq Library for Machine Words"
 maintainer: "pierre-yves@strub.nu"
+authors: [
+  "Pierre-Yves Strub <pierre-yves@strub.nu>"
+]
 homepage: "https://github.com/jasmin-lang/coqword"
 bug-reports: "https://github.com/jasmin-lang/coqword/issues"
 license: "CeCILL-B"
