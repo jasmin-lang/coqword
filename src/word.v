@@ -1290,6 +1290,38 @@ rewrite -[X in (X + _ <= _)%R]mulr1 -mulrDr ler_wpmul2l //.
 by rewrite -(rwP lezP) -addZE Z.add_1_l; apply/Zlt_le_succ/ltzP.
 Qed.
 
+Lemma wcat_rI (s s': seq n.-word) :
+  size s = size s' ->
+  wcat_r s = wcat_r s' ->
+  s = s'.
+Proof.
+elim/last_ind: s s'; first by case.
+move => s w ih; rewrite size_rcons => s'.
+elim/last_ind: s' => // s' w' _; rewrite size_rcons => h.
+have {h} eq_size : size s = size s' := succn_inj h.
+move: ih => /(_ _ eq_size) ih rec.
+suff {ih} : urepr w = urepr w' /\ wcat_r s = wcat_r s'
+  by rewrite -{2}(ureprK w) -{2}(ureprK w') => - [] -> /ih ->.
+move: rec.
+do 2 rewrite wcat_rE.
+rewrite !size_rcons !big_ord_recr /= !nth_rcons !eqxx !ltnn.
+rewrite (eq_bigr (fun i : 'I__ => 2%:R ^+ (n * i) * urepr s`_i)%R);
+  first by move => i _; rewrite nth_rcons ltn_ord.
+rewrite -wcat_rE.
+rewrite (eq_bigr (fun i : 'I__ => 2%:R ^+ (n * i) * urepr s'`_i)%R);
+  first by move => i _; rewrite nth_rcons ltn_ord.
+rewrite -wcat_rE.
+move: (wcat_subproof (in_tuple s)) (wcat_subproof (in_tuple s')).
+rewrite !in_tupleE -eq_size.
+move: (urepr_isword w) (urepr_isword w').
+rewrite !modulusE.
+move: {w w' s s' eq_size} (urepr w) (urepr w') (wcat_r s) (wcat_r s') (2%:R ^+ (n * size s)) => a a' b b' q.
+rewrite /GRing.zero /GRing.add /GRing.mul /=.
+do 4 case/andP => /leZP ? /ltZP ?.
+move => h.
+cut (a = a'); Psatz.nia.
+Qed.
+
 Definition wcat {p} (s : p.-tuple n.-word) :=
   mkWord (wcat_subproof s).
 
