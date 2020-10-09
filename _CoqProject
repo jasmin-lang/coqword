@@ -1,5 +1,9 @@
 -arg -w
 -arg -parsing
+-arg -w
+-arg -ambiguous-paths
+-arg -w
+-arg -fragile-hint-constr
 
 -R src CoqWord
 

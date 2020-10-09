@@ -10,7 +10,7 @@ Local Open Scope ring_scope.
 Local Open Scope nat_scope.
 Local Open Scope Z_scope.
 
-Import GRing.Theory Num.Theory.
+Import GRing.Theory Num.Theory Order.POrderTheory.
 
 Local Notation "m ^ n" := (expn m n) : nat_scope.
 
@@ -124,29 +124,36 @@ Definition lteZP := (
 
 (* --------------------------------------------------------------------- *)
 Module ZNumDomain.
+Lemma leZ_anti (x : Z) : 0 <=? x -> x <=? 0 -> x = 0.
+Proof. by move=> ??; apply: Zle_bool_antisym. Qed.
+
+Lemma leZ_mul (x y : Z) : 0 <=? x -> 0 <=? y -> 0 <=? (x * y)%R.
+Proof. by rewrite -!lteZP; apply: Z.mul_nonneg_nonneg. Qed.
+
+Lemma leZ_add (x y : Z) : 
+  0 <=? x -> 0 <=? y -> 0 <=? (x + y)%R.
+Proof. by rewrite -!lteZP; apply: Z.add_nonneg_nonneg. Qed.
+
+Lemma subZ_ge0 (y x : Z) : (0 <=? (x - y)%R) = (y <=? x).
+Proof.
+by apply/leZP/leZP; [exact: Zle_0_minus_le | exact: Zle_minus_le_0].
+Qed.
+
+Lemma normZN x : Z.abs (- x) = Z.abs x.
+Proof. exact: Z.abs_opp. Qed.
+
+Lemma geZ0_norm x : 0 <=? x -> Z.abs x = x.
+Proof. by rewrite -!lteZP; apply: Z.abs_eq. Qed.
+
 Lemma leZ_norm_add (x y : Z) :
   Z.abs (x + y)%R <=? (Z.abs x + Z.abs y)%R.
 Proof. by rewrite -!lteZP; apply/Z.abs_triangle. Qed.
-
-Lemma ltZ_add (x y : Z) : 
-  0 <? x -> 0 <? y -> 0 <? (x + y)%R.
-Proof. by rewrite -!lteZP; apply/Z.add_pos_pos. Qed.
 
 Lemma eq0_normZ (x : Z) : Z.abs x = 0 -> x = 0.
 Proof. by move/Z.abs_0_iff. Qed.
 
 Lemma leZ_total (x y : Z) : (x <=? y) || (y <=? x).
 Proof. by apply/orP; rewrite -!lteZP; apply/Z.le_ge_cases. Qed.
-
-Lemma normZM : {morph Z.abs : x y / (x * y)%R}.
-Proof. by move=> x y; rewrite Z.abs_mul. Qed.
-
-Lemma leZ_def (x y : Z) : (x <=? y) = (Z.abs (y - x)%R == (y - x)%R).
-Proof.
-apply/idP/eqP; rewrite -!lteZP.
-* by move=> h; rewrite Z.abs_eq // Z.le_0_sub.
-* by move/Z.abs_eq_iff; rewrite Z.le_0_sub.
-Qed.
 
 Lemma ltZ_def (x y : Z) : (x <? y) = (y != x) && (x <=? y).
 Proof.
@@ -155,13 +162,19 @@ apply/idP/andP; rewrite -!lteZP.
 * by rewrite eq_sym; case=> /eqP ? ?; apply/Z.le_neq.
 Qed.
 
-Definition Z_numMixin :=
-  NumMixin leZ_norm_add ltZ_add eq0_normZ (in2W leZ_total)
-           normZM leZ_def ltZ_def.
+Definition Z_realLeMixin :=
+  RealLeMixin
+    leZ_add leZ_mul leZ_anti subZ_ge0 (leZ_total 0)
+    normZN geZ0_norm ltZ_def.
 End ZNumDomain.
 
-Canonical Z_numType := Eval hnf in NumDomainType Z ZNumDomain.Z_numMixin.
-Canonical Z_realDomainType := RealDomainType Z (ZNumDomain.leZ_total 0).
+Canonical Z_porderType := POrderType ring_display Z ZNumDomain.Z_realLeMixin.
+Canonical Z_latticeType := LatticeType Z ZNumDomain.Z_realLeMixin.
+Canonical Z_distrLatticeType := DistrLatticeType Z ZNumDomain.Z_realLeMixin.
+Canonical Z_orderType := OrderType Z ZNumDomain.leZ_total.
+Canonical Z_numDomainType := NumDomainType Z ZNumDomain.Z_realLeMixin.
+Canonical Z_normedZmodType := NormedZmodType Z Z ZNumDomain.Z_realLeMixin.
+Canonical Z_realDomainType := [realDomainType of Z].
 
 (* -------------------------------------------------------------------- *)
 Lemma ltzE {z1 z2 : Z} : (z1 <? z2)%Z = (z1 < z2)%R.
@@ -278,16 +291,16 @@ case: x y => [|x|x] [|y|y] //=; try by constructor.
 + by rewrite (eqP (xchooseP (h x))); constructor.
 + rewrite ler_oppr opprK; apply: (iffP idP).
   - by move/leP/Pos2Nat.inj_le/Pos2Z.neg_le_neg.
-  rewrite -!Pos2Z.opp_pos -Z.opp_le_mono => {h}h.
+  rewrite -!Pos2Z.opp_pos -Z.opp_le_mono => {}h.
   by rewrite lez_nat -(rwP leP) -Pos2Nat.inj_le.
 Qed.
 
 Lemma ltZE (x y : Z) : reflect (x < y) (x < y :> int).
 Proof. apply: (iffP idP).
-+ rewrite ltr_neqAle -(rwP andP) -(rwP leZE) => -[neq lt].
++ rewrite lt_neqAle -(rwP andP) -(rwP leZE) => -[neq lt].
   apply/Z.le_neq; split=> // /(congr1 Z_to_int).
   by move/eqP; rewrite (negbTE neq).
-+ move/Z.le_neq => [le neq]; rewrite ltr_neqAle; apply/andP.
++ move/Z.le_neq => [le neq]; rewrite lt_neqAle; apply/andP.
   rewrite -(rwP leZE); split=> //; apply/eqP.
   by move/(congr1 int_to_Z); rewrite !Z_to_intK.
 Qed.
@@ -300,14 +313,14 @@ Proof.
 move/ltzP/(@ltZE 0) => h; have /(congr1 int_to_Z) := divz_eq a b.
 rewrite mulrC !rmorph /= !Z_to_intK => /Zdiv_unique -> //.
 rewrite !lteZE !rmorph /= !int_to_ZK subr_ge0 ltr_subl_addr.
-rewrite (rwP andP) lez_floor ?gtr_eqF //=.
+rewrite (rwP andP) lez_floor ?gt_eqF //=.
 by rewrite addrC -[X in (_ + X)%R]mul1r -mulrDl ltz_ceil.
 Qed.
 
 Lemma modZE (a b : Z) : (0 < b)%R -> a mod b = (a %% b)%I.
 Proof.
 move=> gt0_b; rewrite /modz Zmod_eq_full; last first.
-+ by apply/eqP; rewrite gtr_eqF.
++ by apply/eqP; rewrite gt_eqF.
 + by rewrite rmorphB !rmorphM /= !Z_to_intK divZE.
 Qed.
 
