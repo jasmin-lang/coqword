@@ -221,7 +221,7 @@ Definition add_word (w1 w2 : n.-word) :=
   mkword (urepr w1 + urepr w2)%Z.
 
 Definition sub_word (w1 w2 : n.-word) :=
-  mkword (urepr w2 - urepr w2)%Z.
+  mkword (urepr w1 - urepr w2)%Z.
 
 Definition opp_word (w : n.-word) :=
   mkword (- urepr w)%Z.
