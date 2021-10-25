@@ -204,8 +204,11 @@ Definition wsize (w : n.-word) := n.
 End WordBaseTheory.
 
 (* -------------------------------------------------------------------- *)
+#[local]
 Hint Resolve 0 isword_word : core.
+#[local]
 Hint Extern  0 (0 <= _)%Z => by apply/isword_geZ0; eassumption : core.
+#[local]
 Hint Resolve 0 word_geZ0 : core.
 
 Arguments word0 {n}.
