@@ -1,6 +1,6 @@
 (* -------------------------------------------------------------------- *)
 From mathcomp Require Import all_ssreflect all_algebra.
-(* ------- *) Require Import Arith ZArith Omega.
+(* ------- *) Require Import Arith ZArith.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
