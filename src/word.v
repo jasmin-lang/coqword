@@ -1,6 +1,6 @@
 (* -------------------------------------------------------------------- *)
 From mathcomp Require Import all_ssreflect all_algebra zmodp.
-(* ------- *) Require Import Arith ZArith Omega ssrZ.
+(* ------- *) Require Import Arith ZArith ssrZ.
 Require Psatz.
 
 Ltac elim_div :=
