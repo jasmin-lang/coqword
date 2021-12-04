@@ -4,6 +4,7 @@ homepage: "https://github.com/jasmin-lang/coqword"
 bug-reports: "https://github.com/jasmin-lang/coqword/issues"
 dev-repo: "git+https://github.com/jasmin-lang/coqword.git"
 license: "MIT"
+version: "1.0"
 authors: ["Pierre-Yves Strub"]
 build: [ "dune" "build" "-p" name "-j" jobs ]
 depends: [
