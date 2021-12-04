@@ -3,16 +3,8 @@ From mathcomp Require Import all_ssreflect all_algebra zmodp.
 (* ------- *) Require Import Arith ZArith ssrZ.
 Require Psatz.
 
-Ltac elim_div :=
-   unfold Z.div, Zmod;
-     match goal with
-       |  H : context[ Z.div_eucl ?X ?Y ] |-  _ =>
-          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
-       |  |-  context[ Z.div_eucl ?X ?Y ] =>
-          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
-     end; unfold Remainder.
-
-Set Implicit Arguments.
+(* -------------------------------------------------------------------- *)
+Set   Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
 Unset SsrOldRewriteGoalsOrder.
@@ -26,7 +18,18 @@ Local Open Scope nat_scope.
 
 Import GRing.Theory Num.Theory Order.POrderTheory Order.TotalTheory.
 
+(* -------------------------------------------------------------------- *)
 Local Notation "m ^ n" := (expn m n) : nat_scope.
+
+(* -------------------------------------------------------------------- *)
+Ltac elim_div :=
+   unfold Z.div, Zmod;
+     match goal with
+       |  H : context[ Z.div_eucl ?X ?Y ] |-  _ =>
+          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
+       |  |-  context[ Z.div_eucl ?X ?Y ] =>
+          generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
+     end; unfold Remainder.
 
 (* -------------------------------------------------------------------- *)
 Section WordDef.
@@ -204,12 +207,9 @@ Definition wsize (w : n.-word) := n.
 End WordBaseTheory.
 
 (* -------------------------------------------------------------------- *)
-#[local]
-Hint Resolve 0 isword_word : core.
-#[local]
-Hint Extern  0 (0 <= _)%Z => by apply/isword_geZ0; eassumption : core.
-#[local]
-Hint Resolve 0 word_geZ0 : core.
+Local Hint Extern 0 (0 <= _ < modulus _) => exact: isword_word : core.
+Local Hint Extern 0 (0 <= _)%Z => by apply/isword_geZ0; eassumption : core.
+Local Hint Extern 0 (0 <= _)%Z => exact: word_geZ0 : core.
 
 Arguments word0 {n}.
 
@@ -667,7 +667,7 @@ rewrite (eq_bigr (fun i => 2 ^ k * (2 ^ (i - k) * nth false w i))).
 + by move=> i lt_ni; rewrite mulnA -expnD subnKC 1?ltnW.
 rewrite -big_distrr /= mulKn ?expn_gt0 //.
 rewrite (big_morph odd oddD (erefl _)) big1 ?addbF //.
-by move=> i lt_ni; rewrite -(subnSK lt_ni) expnS -mulnA odd_mul.
+by move=> i lt_ni; rewrite -(subnSK lt_ni) expnS -mulnA oddM.
 Qed.
 
 (* -------------------------------------------------------------------- *)

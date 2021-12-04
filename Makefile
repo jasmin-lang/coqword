@@ -1,19 +1,16 @@
 # -*- Makefile -*-
 
 # --------------------------------------------------------------------
-SUBDIRS :=
-
-include Makefile.common
-
-# --------------------------------------------------------------------
-.PHONY: install
-
-install:
-	$(MAKE) -f Makefile.coq install
+DUNEOPTS ?=
+DUNE     := dune $(DUNEOPTS)
 
 # --------------------------------------------------------------------
-this-clean::
-	rm -f src/*.glob src/*.d src/*.vo
+.PHONY: default build clean
 
-this-distclean::
-	rm -f $(shell find . -name '*~')
+default: build
+
+build:
+	$(DUNE) build
+
+clean:
+	$(DUNE) clean

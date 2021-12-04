@@ -1,11 +1,6 @@
--arg -w
--arg -parsing
--arg -w
--arg -ambiguous-paths
--arg -w
--arg -fragile-hint-constr
+-arg -w -arg -ambiguous-paths
+-arg -w -arg -notation-overridden
+-arg -w -arg -redundant-canonical-projection
+-arg -w -arg -projection-no-head-constant
 
--R src CoqWord
-
-src/ssrZ.v
-src/word.v
+-R _build/default/src CoqWord
