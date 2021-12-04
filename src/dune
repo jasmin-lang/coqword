@@ -1,6 +1,5 @@
 (coq.theory
  (name CoqWord)
- (mode native)
  (package coq-mathcomp-word)
  (flags -w -ambiguous-paths
         -w -notation-overridden
