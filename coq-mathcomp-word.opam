@@ -5,6 +5,7 @@ bug-reports: "https://github.com/jasmin-lang/coqword/issues"
 dev-repo: "git+https://github.com/jasmin-lang/coqword.git"
 license: "MIT"
 authors: ["Pierre-Yves Strub"]
+build: [ "dune" "build" "-p" name "-j" jobs ]
 depends: [
   "dune" {>= "2.8"}
   "coq" {(>= "8.12" & < "8.15~")}
