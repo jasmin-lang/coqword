@@ -14,3 +14,4 @@ build:
 
 clean:
 	$(DUNE) clean
+	rm -f src/.lia.cahe src/.nia.cache
