@@ -11,4 +11,4 @@ depends: [
   "coq-mathcomp-ssreflect" {(>= "1.12" & < "1.14~")}
   "coq-mathcomp-algebra"
 ]
-synopsis: "Yet Another Coq Library on Machine Words."
+synopsis: "Yet Another Coq Library on Machine Words"
