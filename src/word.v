@@ -697,8 +697,9 @@ Lemma wbit_word_ovf (w : n.-word) i : (i >= n) -> wbit w i = false.
 Proof.
 case: (w =P 0)%R => [->|]; first by rewrite /wbit Z.bits_0.
 move=> /eqP nz_w le_ni; rewrite /wbit Z.bits_above_log2 //.
-rewrite -Z.log2_lt_pow2; last first.
+have w_pos : (0 < w)%Z.
 + by rewrite Z.le_neq; split=> //; apply/eqP; rewrite eq_sym nz_w.
+rewrite -Z.log2_lt_pow2 => //.
 apply/ltzP/(@lt_le_trans _ _ (2 ^ Z.of_nat n)%Z); last first.
 + by apply/lezP/Z.pow_le_mono_r/inj_le/ssrnat.leP.
 by rewrite -two_power_nat_equiv; case/andP: (isword_word w).
