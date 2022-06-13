@@ -13,3 +13,4 @@ depends: [
   "coq-mathcomp-algebra"
 ]
 synopsis: "Yet Another Coq Library on Machine Words"
+description: "Yet Another Coq Library on Machine Words"
