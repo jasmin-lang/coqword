@@ -1,4 +1,5 @@
 opam-version: "2.0"
+version: "dev"
 maintainer: "pierre-yves@strub.nu"
 homepage: "https://github.com/jasmin-lang/coqword"
 bug-reports: "https://github.com/jasmin-lang/coqword/issues"
