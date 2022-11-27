@@ -715,7 +715,7 @@ rewrite /wbit; elim: n z => [|m ih] z ge0_z hbit.
 + rewrite big_ord0; apply/Z.bits_inj_0 => i; case: (ltrP i 0).
   * by move=> lt0_i; rewrite Z.testbit_neg_r // (rwP ltzP).
   by case/lezP/Z_of_nat_complete => k ->; apply/negbTE/hbit.
-rewrite [LHS](Z_div_mod_eq _ 2) // -Z.bit0_mod {1}[(z/2)%Z]ih.
+rewrite [LHS](Z_div_mod_eq_full _ 2) // -Z.bit0_mod {1}[(z/2)%Z]ih.
 + by apply/lezP/Z_div_pos/lezP.
 + move=> i le_mi; rewrite Z.div2_bits; first by apply/Zle_0_nat.
   by rewrite -Nat2Z.inj_succ hbit.
