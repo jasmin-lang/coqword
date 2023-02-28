@@ -22,7 +22,7 @@
 
 (* -------------------------------------------------------------------- *)
 From mathcomp Require Import all_ssreflect all_algebra zmodp.
-(* ------- *) Require Import Arith ZArith ssrZ.
+(* ------- *) Require Import Arith ZArith word_ssrZ.
 Require Psatz.
 
 (* -------------------------------------------------------------------- *)
