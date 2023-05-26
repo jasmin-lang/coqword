@@ -23,7 +23,14 @@ jobs:
         -  mathcomp/mathcomp:1.15.0-coq-8.16
       fail-fast: false
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - uses: coq-community/docker-coq-action@v1
       with:
         custom_image: ${{ matrix.image }}
+        before_install: |
+          startGroup "Workaround permission issue"
+            sudo chown -R coq:coq .
+          endGroup
+    - name: Revert permissions
+      if: ${{ always() }}
+      run: sudo chown -R 1001:116 .
