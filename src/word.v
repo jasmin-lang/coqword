@@ -21,6 +21,7 @@
 (* SOFTWARE.                                                            *)
 
 (* -------------------------------------------------------------------- *)
+From HB Require Import structures.
 From mathcomp Require Import all_ssreflect all_algebra zmodp.
 (* ------- *) Require Import Arith ZArith word_ssrZ.
 Require Psatz.
@@ -89,13 +90,8 @@ Notation isword z := (0 <= z < modulus)%R.
 
 Record word := mkWord { toword :> Z; _ : isword toword; }.
 
-Canonical word_subType := Eval hnf in [subType for toword].
-Definition word_eqMixin := [eqMixin of word by <:].
-Canonical word_eqType := Eval hnf in EqType word word_eqMixin.
-Definition word_choiceMixin := [choiceMixin of word by <:].
-Canonical word_choiceType := Eval hnf in ChoiceType word word_choiceMixin.
-Definition word_countMixin := [countMixin of word by <:].
-Canonical word_countType := Eval hnf in CountType word word_countMixin.
+HB.instance Definition _ := [isSub for toword].
+HB.instance Definition _ := [Countable of word by <:].
 End WordDef.
 
 (* -------------------------------------------------------------------- *)
@@ -336,11 +332,8 @@ Proof.
 by move=> x; rewrite !word_ordE @word_of_ordK addNr.
 Qed.
 
-Definition word_ordMixin :=
-  ZmodMixin addwA addwC add0w addNw.
-
-Canonical word_ordType :=
-  Eval hnf in ZmodType n.-word word_ordMixin.
+HB.instance Definition _ := GRing.isZmodule.Build n.-word
+  addwA addwC add0w addNw.
 
 (* -------------------------------------------------------------------- *)
 Lemma ord_of_word_is_additive : additive ord_of_word.
@@ -349,11 +342,11 @@ move=> /= x y; rewrite [in LHS]/GRing.add [in LHS]/GRing.opp /=.
 by rewrite !word_ordE /= !word_of_ordK.
 Qed.
 
-Canonical ord_of_word_additive :=
-  Additive ord_of_word_is_additive.
+HB.instance Definition _ := GRing.isAdditive.Build n.-word 'I__ ord_of_word
+    ord_of_word_is_additive.
 
-Canonical word_of_ord_additive :=
-  Additive (can2_additive ord_of_wordK word_of_ordK).
+HB.instance Definition _ := GRing.isAdditive.Build 'I__ n.-word word_of_ord
+  (can2_additive ord_of_wordK word_of_ordK).
 End WordZmod.
 
 (* ==================================================================== *)
@@ -409,11 +402,11 @@ move=> /= x y; rewrite {1}/zmod_of_word raddfB /=.
 by apply/eqP; rewrite -val_eqE /= -word_Fcast.
 Qed.
 
-Canonical zmod_of_word_additive :=
-  Additive zmod_of_word_is_additive.
+HB.instance Definition _ := GRing.isAdditive.Build n.+1.-word 'I__ zmod_of_word
+  zmod_of_word_is_additive.
 
-Canonical word_of_zmod_additive :=
-  Additive (can2_additive zmod_of_wordK word_of_zmodK).
+HB.instance Definition _ := GRing.isAdditive.Build 'I__ n.+1.-word word_of_zmod
+  (can2_additive zmod_of_wordK word_of_zmodK).
 
 (* -------------------------------------------------------------------- *)
 Lemma word0_zmodE : word0 = word_of_zmod 0%R.
@@ -477,28 +470,24 @@ Lemma onew_neq0 : word1 != 0%R.
 Proof. by rewrite -val_eqE. Qed.
 
 (* -------------------------------------------------------------------- *)
-Definition word_ringMixin :=
-  ComRingMixin mulwA mulwC mul1w mulwDl onew_neq0.
-
-Canonical word_ringType :=
-  Eval hnf in RingType n.+1.-word word_ringMixin.
-Canonical word_comRingType :=
-  Eval hnf in ComRingType n.+1.-word mulwC.
+HB.instance Definition _ := GRing.Zmodule_isComRing.Build n.+1.-word
+  mulwA mulwC mul1w mulwDl onew_neq0.
 
 (* -------------------------------------------------------------------- *)
-Lemma zmod_of_word_is_rmorphism : rmorphism zmod_of_word.
+Lemma zmod_of_word_is_multiplicative : multiplicative zmod_of_word.
 Proof.
-split; first by apply/zmod_of_word_is_additive.
 split=> /= [x y|]; rewrite ?[in LHS]/GRing.mul ?[in LHS]/GRing.one /=.
 + by rewrite !word_zmodE /= !word_of_zmodK.
 + by rewrite !word_zmodE /= !word_of_zmodK.
 Qed.
 
-Canonical zmod_of_word_rmorphism :=
-  RMorphism zmod_of_word_is_rmorphism.
+HB.instance Definition _ :=
+  GRing.isMultiplicative.Build n.+1.-word 'I__ zmod_of_word
+    zmod_of_word_is_multiplicative.
 
-Canonical word_of_zmod_rmorphism :=
-  RMorphism (can2_rmorphism zmod_of_wordK word_of_zmodK).
+HB.instance Definition _ :=
+  GRing.isMultiplicative.Build 'I__ n.+1.-word word_of_zmod
+    (can2_rmorphism zmod_of_wordK word_of_zmodK).
 End WordRing.
 
 (* ==================================================================== *)
