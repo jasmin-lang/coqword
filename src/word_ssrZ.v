@@ -21,6 +21,7 @@
 (* SOFTWARE.                                                            *)
 
 (* -------------------------------------------------------------------- *)
+From HB Require Import structures.
 From mathcomp Require Import all_ssreflect all_algebra.
 (* ------- *) Require Import Arith ZArith.
 
@@ -84,27 +85,18 @@ Proof. by case=> [[|n]|n] //=; rewrite Pos.of_nat_succ Nat2Pos.id. Qed.
 Lemma ZeqbP x y : reflect (x = y) (Z.eqb x y).
 Proof. by apply: (iffP idP) => /Z.eqb_eq. Qed.
 
-Definition Z_eqMixin := EqMixin ZeqbP.
-Canonical Z_eqType := Eval hnf in EqType Z Z_eqMixin.
+HB.instance Definition _ := hasDecEq.Build Z ZeqbP.
 
 (* -------------------------------------------------------------------- *)
-Definition Z_choiceMixin := CanChoiceMixin Z_to_intK.
-Canonical Z_choiceType := Eval hnf in ChoiceType Z Z_choiceMixin.
-
-Definition Z_countMixin := CanCountMixin Z_to_intK.
-Canonical Z_counType := Eval hnf in CountType Z Z_countMixin.
+HB.instance Definition _ := Countable.copy Z (can_type Z_to_intK).
 
 (* -------------------------------------------------------------------- *)
-Definition Z_zmodMixin :=
-  ZmodMixin Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
-Canonical Z_zmodType := Eval hnf in ZmodType Z Z_zmodMixin.
+HB.instance Definition _ := GRing.isZmodule.Build Z
+  Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
 
 (* -------------------------------------------------------------------- *)
-Definition Z_comRingMixin :=
-  ComRingMixin
-    Z.mul_assoc Z.mul_comm Z.mul_1_l Z.mul_add_distr_r (erefl true).
-Canonical Z_ringType := Eval hnf in RingType Z Z_comRingMixin.
-Canonical Z_comRingType := Eval hnf in ComRingType Z Z.mul_comm.
+HB.instance Definition _ := GRing.Zmodule_isComRing.Build Z
+  Z.mul_assoc Z.mul_comm Z.mul_1_l Z.mul_add_distr_r (erefl true).
 
 (* -------------------------------------------------------------------- *)
 Module ZUnitRing.
@@ -123,15 +115,13 @@ Proof. exact. Qed.
 Lemma idomain_axiomZ (m n : Z) : (m * n = 0)%R -> (m == 0) || (n == 0).
 Proof. by move/Z.mul_eq_0 => [] ->; rewrite eqxx ?orbT. Qed.
 
-Definition comUnitMixin := ComUnitRingMixin mulVZ unitZPl invZ_out.
 End ZUnitRing.
 
-Canonical Z_unitRingType :=
-  Eval hnf in UnitRingType Z ZUnitRing.comUnitMixin.
-Canonical Z_comUnitRing :=
-  Eval hnf in [comUnitRingType of Z].
-Canonical Z_iDomain :=
-  Eval hnf in IdomainType Z ZUnitRing.idomain_axiomZ.
+HB.instance Definition _ := GRing.ComRing_hasMulInverse.Build Z
+  ZUnitRing.mulVZ ZUnitRing.unitZPl ZUnitRing.invZ_out.
+
+HB.instance Definition _ := GRing.ComUnitRing_isIntegral.Build Z
+  ZUnitRing.idomain_axiomZ.
 
 (* -------------------------------------------------------------------- *)
 Lemma leZP x y : reflect (x <= y) (x <=? y).
@@ -184,19 +174,11 @@ apply/idP/andP; rewrite -!lteZP.
 * by rewrite eq_sym; case=> /eqP ? ?; apply/Z.le_neq.
 Qed.
 
-Definition Z_realLeMixin :=
-  RealLeMixin
-    leZ_add leZ_mul leZ_anti subZ_ge0 (leZ_total 0)
-    normZN geZ0_norm ltZ_def.
+Definition Z_realLeMixin := Num.IntegralDomain_isLeReal.Build Z
+  leZ_add leZ_mul leZ_anti subZ_ge0 (leZ_total 0) normZN geZ0_norm ltZ_def.
 End ZNumDomain.
 
-Canonical Z_porderType := POrderType ring_display Z ZNumDomain.Z_realLeMixin.
-Canonical Z_latticeType := LatticeType Z ZNumDomain.Z_realLeMixin.
-Canonical Z_distrLatticeType := DistrLatticeType Z ZNumDomain.Z_realLeMixin.
-Canonical Z_orderType := OrderType Z ZNumDomain.leZ_total.
-Canonical Z_numDomainType := NumDomainType Z ZNumDomain.Z_realLeMixin.
-Canonical Z_normedZmodType := NormedZmodType Z Z ZNumDomain.Z_realLeMixin.
-Canonical Z_realDomainType := [realDomainType of Z].
+HB.instance Definition _ := ZNumDomain.Z_realLeMixin.
 
 (* -------------------------------------------------------------------- *)
 Lemma ltzE {z1 z2 : Z} : (z1 <? z2)%Z = (z1 < z2)%R.
@@ -253,13 +235,13 @@ case=> [|x|x] [|y|y] //=.
 + by rewrite opprK [RHS]addrC; apply/h.
 Qed.
 
-Canonical Z_to_int_additive := Additive Z_to_int_is_additive.
+HB.instance Definition _ := GRing.isAdditive.Build Z int Z_to_int
+  Z_to_int_is_additive.
 
 (* -------------------------------------------------------------------- *)
-Lemma Z_to_int_is_rmorphism : rmorphism Z_to_int.
+Lemma Z_to_int_is_multiplicative : multiplicative Z_to_int.
 Proof.
-do 2? split => //=; first by apply/Z_to_int_is_additive.
-case=> [|x|x] y /=; first by rewrite mul0r.
+split=> // -[|x|x] y /=; first by rewrite mul0r.
 - elim/posind: x => [|p ih]; first by rewrite !mul1r.
   rewrite Pos2Z.inj_add addZE mulrDl mul1r raddfD /=.
   by rewrite ih Pos2Nat.inj_add /= addP PoszD mulrDl mul1r.
@@ -269,19 +251,22 @@ case=> [|x|x] y /=; first by rewrite mul0r.
   by rewrite opprD mulrDl mulN1r.
 Qed.
 
-Canonical Z_to_int_rmorphism := RMorphism Z_to_int_is_rmorphism.
+HB.instance Definition _ := GRing.isMultiplicative.Build Z int Z_to_int
+  Z_to_int_is_multiplicative.
 
 (* -------------------------------------------------------------------- *)
 Lemma int_to_Z_is_additive : additive int_to_Z.
 Proof. by apply/(can2_additive _ int_to_ZK)/Z_to_intK. Qed.
 
-Canonical int_to_Z_additive := Additive int_to_Z_is_additive.
+HB.instance Definition _ := GRing.isAdditive.Build int Z int_to_Z
+  int_to_Z_is_additive.
 
 (* -------------------------------------------------------------------- *)
-Lemma int_to_Z_is_rmorphism : rmorphism int_to_Z.
+Lemma int_to_Z_is_multiplicative : multiplicative int_to_Z.
 Proof. by apply/(can2_rmorphism _ int_to_ZK)/Z_to_intK. Qed.
 
-Canonical int_to_Z_rmorphism := RMorphism int_to_Z_is_rmorphism.
+HB.instance Definition _ := GRing.isMultiplicative.Build int Z int_to_Z
+  int_to_Z_is_multiplicative.
 
 (* -------------------------------------------------------------------- *)
 Lemma Z_to_int_of_natE k : Z_to_int (Z.of_nat k) = k%:Z.

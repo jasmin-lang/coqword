@@ -2,7 +2,7 @@ with import <nixpkgs> {};
 
 let
   coqPackages = coqPackages_8_17;
-  mathcomp = coqPackages.mathcomp;
+  mathcomp = coqPackages.mathcomp.override { version = "2.1.0"; };
 in
 
 stdenv.mkDerivation {
