@@ -45,7 +45,7 @@ Local Notation "m ^ n" := (expn m n) : nat_scope.
 
 (* -------------------------------------------------------------------- *)
 Ltac elim_div :=
-   unfold Z.div, Zmod;
+   unfold Z.div, Z.modulo;
      match goal with
        |  H : context[ Z.div_eucl ?X ?Y ] |-  _ =>
           generalize (Z_div_mod_full X Y) ; destruct (Z.div_eucl X Y)
@@ -1081,7 +1081,7 @@ have hn := Nat2Z.is_nonneg n.
 have Hn : (0 < 2 ^ Z.of_nat n)%Z.
 + exact: Z.pow_pos_nonneg.
 replace (-1 mod 2 ^ Z.of_nat n)%Z with (Z.ones (Z.of_nat n)); first last.
-+ rewrite Z.ones_equiv; elim_div; intuition; cut (z = -1)%Z; Psatz.nia.
++ rewrite Z.ones_equiv; elim_div => ?; cut (z = -1)%Z; Lia.nia.
 case: ssrnat.ltP => h.
 + apply: Z.ones_spec_low; Psatz.lia.
 apply: Z.ones_spec_high; Psatz.lia.
