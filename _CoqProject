@@ -2,5 +2,6 @@
 -arg -w -arg -notation-overridden
 -arg -w -arg -redundant-canonical-projection
 -arg -w -arg -projection-no-head-constant
+-arg "-w -hiding-delimiting-key"
 
 -R _build/default/src mathcomp.word
