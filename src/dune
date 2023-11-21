@@ -2,6 +2,7 @@
  (name mathcomp.word)
  (package coq-mathcomp-word)
  (flags -w -ambiguous-paths
+        -w -hiding-delimiting-key
         -w -notation-overridden
         -w -redundant-canonical-projection
         -w -projection-no-head-constant))
