@@ -369,7 +369,7 @@ Qed.
 Lemma isword1 : isword 1%Z.
 Proof.
 rewrite ler01 /= modulusE exprS (@lt_le_trans _ _ 2%:R) //.
-by rewrite ler_pmulr // exprn_ege1.
+by rewrite ler_pMr // exprn_ege1.
 Qed.
 
 Definition word1 := mkWord isword1.
@@ -504,7 +504,7 @@ Proof. by rewrite mkword_val_small ?lerr //= exprn_gt0. Qed.
 Lemma mkword_val1 {n : nat} : mkword n.+1 1 = 1%Z :> Z.
 Proof.
 rewrite mkword_val_small // (@lt_le_trans _ _ 2%:R) //.
-by rewrite exprS ler_pemulr // exprn_ege1.
+by rewrite exprS ler_peMr // exprn_ege1.
 Qed.
 
 (* ==================================================================== *)
@@ -545,14 +545,14 @@ rewrite Zplus_mod_idemp_r !(oppZE, addZE).
 case: ltrP; rewrite (addr0, mulr1n); last first.
 + move=> le_w2_w1; rewrite Z.mod_small //; split.
   * by rewrite (rwP lezP) subr_ge0.
-  * rewrite (rwP ltzP) ltr_subl_addr.
-    by rewrite (lt_trans (urepr_ltmod _)) ?ltr_addl.
+  * rewrite (rwP ltzP) ltrBlDr.
+    by rewrite (lt_trans (urepr_ltmod _)) ?ltrDl.
 + move=> lt_w1_w2; rewrite -(@Z_mod_plus_full _ 1) Z.mul_1_l.
   rewrite Z.mod_small //; rewrite !(rwP lezP, rwP ltzP); split.
   * rewrite addZE addrAC subr_ge0; apply/ltW.
     rewrite (lt_le_trans (urepr_ltmod _)) //.
-    by rewrite ler_addr urepr_ge0.
-  * by rewrite addZE -ltr_subr_addl opprB ltr_addl subr_gt0.
+    by rewrite lerDr urepr_ge0.
+  * by rewrite addZE -ltrBrDl opprB ltrDl subr_gt0.
 Qed.
 
 (* -------------------------------------------------------------------- *)
@@ -560,7 +560,7 @@ Lemma word_sz_eq0 {n} (w : n.-word) : n = 0 -> w = 0%R.
 Proof.
 move=> n_eq0; move: (isword_word w); rewrite [X in modulus X]n_eq0.
 rewrite modulus0 -(rwP andP) -!(rwP lezP, rwP ltzP) !lteZE.
-rewrite int_to_ZK -[1%:Z]add0r ltz_addr1.
+rewrite int_to_ZK -[1%:Z]add0r ltzD1.
 rewrite (rwP andP) -eq_le => /eqP /(can_inj Z_to_intK).
 by move/(@val_inj _ _ _ word0) => <-.
 Qed.
@@ -587,7 +587,7 @@ Lemma le2Xn_sumbitsZ k (F : nat -> bool) :
   (\sum_(i < k) 2%:R ^ i * (F i)%:R < 2%:R ^+ k :> Z)%R.
 Proof.
 elim: k => [|k ih]; [by rewrite big_ord0 | rewrite big_ord_recr /=].
-rewrite exprS mulr_natl [X in (_ < X)%R]mulr2n ltr_le_add //.
+rewrite exprS mulr_natl [X in (_ < X)%R]mulr2n ltr_leD //.
 by case: (F k); rewrite !Monoid.simpm // exprn_ge0.
 Qed.
 
@@ -630,7 +630,7 @@ rewrite /t2w_def sumr_ge0 /= => [i _|]; first by rewrite ge0_bit.
 rewrite /t2w_def modulusE; elim: n t => [|l ih] t.
   by rewrite big_ord0 ltr01.
 rewrite big_ord_recr /= exprS mulr_natl [_ ^+ _ *+ 2]mulr2n.
-apply/ltr_le_add/ler_pimulr; first last.
+apply/ltr_leD/ler_piMr; first last.
 + by rewrite lern1 leq_b1. + by rewrite exprn_ge0.
 pose u := [tuple nth false t i | i < l].
 rewrite (eq_bigr (fun i : 'I_l => 2%:R ^+ i * (tnth u i)%:R)%R) //.
@@ -879,7 +879,7 @@ case: n w => [|n] /= w; rewrite /wsize /=.
   by rewrite wbitwE // nth_default // size_tuple.
 apply/esym; rewrite [in LHS]w2sumE big_ord_recr /=.
 case: (wbit _); rewrite !Monoid.simpm modulusE.
-+ by rewrite ler_addr; apply/sumr_ge0 => i _; apply/ge0_bit.
++ by rewrite lerDr; apply/sumr_ge0 => i _; apply/ge0_bit.
 + by apply/negbTE; rewrite -ltNge le2Xn_sumbitsZ.
 Qed.
 
@@ -930,15 +930,15 @@ Proof.
 apply/esym; case: ltrP; last first.
 + move=> ge; apply/negbTE; rewrite negbK subwE Zmod_small //.
   split; first by apply/lezP; rewrite subr_ge0.
-  apply/ltzP; rewrite -[modulus n]subr0 ltr_le_sub //.
+  apply/ltzP; rewrite -[modulus n]subr0 ltr_leB //.
   * by rewrite urepr_ltmod. * by rewrite urepr_ge0.
 + move=> lt; rewrite subwE -(@Z_mod_plus _ 1).
   * by apply/Z.lt_gt/ltzP/modulus_gt0.
   rewrite !(addZE, mulZE) mul1r Zmod_small; first split.
   * apply/lezP; rewrite addrC -opprB subr_ge0.
-    rewrite ler_subl_addr ler_paddr //.
+    rewrite lerBlDr ler_wpDr //.
     * by rewrite urepr_ge0. * by rewrite ltW ?urepr_ltmod.
-  * by apply/ltzP; rewrite gtr_addr subr_lt0.
+  * by apply/ltzP; rewrite gtrDr subr_lt0.
   * apply/eqP; rewrite -[X in _=X]addr0 => /addrI.
     by move/eqP; rewrite gt_eqF.
 Qed.
@@ -978,7 +978,7 @@ Notation isword n z := (0 <= z < modulus n)%R.
 Lemma wumul_subproof (w1 w2 : n.-word) : isword n.*2 (urepr w1 * urepr w2).
 Proof.
 rewrite mulr_ge0 ?urepr_ge0 //= modulusE -addnn exprD.
-by apply/ltr_pmul; rewrite -?modulusE ?(urepr_ge0, urepr_ltmod).
+by apply/ltr_pM; rewrite -?modulusE ?(urepr_ge0, urepr_ltmod).
 Qed.
 
 Definition wumul (w1 w2 : n.-word) : n.*2.-word :=
@@ -999,7 +999,7 @@ Lemma w0extend_subproof (p : nat) (w : n.-word) :
   (0 <= val w < modulus (n + p))%R.
 Proof.
 case/andP: (isword_word w) => -> h /=; rewrite modulusE.
-rewrite exprD (lt_le_trans h) // modulusE ler_pemulr //.
+rewrite exprD (lt_le_trans h) // modulusE ler_peMr //.
 + by apply/exprn_ge0. + by apply/exprn_ege1.
 Qed.
 
@@ -1183,15 +1183,15 @@ rewrite /asr mkword_valK sreprE msbE leNgt; case: ifPn => /=.
   by move=> ovf; rewrite -/(wbit _ _) wbit_word_ovf.
 rewrite -leNgt => le; rewrite -(@Z_mod_plus_full _ 1).
 rewrite !(addZE, mulZE) mul1r wbit_mod2Xn ?{1}/wbit //.
-+ rewrite -ler_subl_addr sub0r /Z.shiftr /=.
++ rewrite -lerBlDr sub0r /Z.shiftr /=.
   set x := (urepr _ - _)%R; have gex: (-modulus n <= x)%R.
-  * by rewrite -ler_subl_addr opprK addrC subrr urepr_ge0.
+  * by rewrite -lerBlDr opprK addrC subrr urepr_ge0.
   case: k => //=; elim=> /= [|k ih].
   * rewrite Z.div2_div -(rwP lezP); apply/Z.div_le_lower_bound => //.
-    by apply/lezP; rewrite mulZE (le_trans _ gex) // ler_nemull.
+    by apply/lezP; rewrite mulZE (le_trans _ gex) // ler_neMl.
   * rewrite Pos.iter_succ Z.div2_div -(rwP lezP).
     apply/Z.div_le_lower_bound/lezP => //; rewrite mulZE.
-    by rewrite (le_trans _ ih) // ler_nemull.
+    by rewrite (le_trans _ ih) // ler_neMl.
 rewrite -(@Z.mod_pow2_bits_low _ n) /=; first by apply/inj_lt/ssrnat.ltP.
 have h: (2 ^ n = modulus n)%Z by rewrite /modulus two_power_nat_equiv.
 rewrite h -Zplus_mod_idemp_r Z_mod_same_full Z.add_0_r.
@@ -1205,8 +1205,8 @@ rewrite addZE -Nat2Z.n2zD; case: ifPn.
   rewrite Z_mod_plus_full Zmod_small // !(rwP lezP, rwP ltzP).
   by rewrite (rwP andP) isword_word.
 + rewrite -leqNgt; move=> le_n_iDk; have: (1 <= modulus n - urepr w)%R.
-  * rewrite ler_subr_addl; apply/leZP/leZE; rewrite rmorphD.
-    by rewrite lez_addr1; apply/ltZE/ltZP/urepr_ltmod.
+  * rewrite lerBrDl; apply/leZP/leZE; rewrite rmorphD.
+    by rewrite lezD1; apply/ltZE/ltZP/urepr_ltmod.
   rewrite le_eqVlt => /orP[/eqP|lt].
   * move/(congr1 -%R); rewrite opprB => <-.
     by rewrite Z.bits_opp ?Z.bits_0 //; apply/Zle_0_nat.
@@ -1214,11 +1214,11 @@ rewrite addZE -Nat2Z.n2zD; case: ifPn.
   * by apply/ltzP; rewrite subr_lt0 urepr_ltmod.
   * apply/Z.log2_lt_pow2; apply/ltzP.
     - rewrite -Z.sub_1_r !(subZE, addZE, oppZE).
-      by rewrite ltr_subr_addl addr0 opprB.
+      by rewrite ltrBrDl addr0 opprB.
     - apply/(@lt_le_trans _ _ (modulus n)); last first.
       + by rewrite -h; apply/lezP/Z.pow_le_mono_r/inj_le/ssrnat.leP.
       rewrite -Z.sub_1_r !(subZE, oppZE) opprB -addrA -opprD.
-      by rewrite ltr_subl_addr ltr_addl ltr_paddl // urepr_ge0.
+      by rewrite ltrBlDr ltrDl ltr_wpDl // urepr_ge0.
 Qed.
 
 Lemma wbit_asr_hi (w : n.-word) i j :
@@ -1300,8 +1300,8 @@ rewrite (eq_bigr (F \o val)) /= => [i _|].
 rewrite mulnS modulusD {}/F -mulr_sumr -modulusE.
 set z := (X in (_ + _ * X < _)%R).
 apply/(@lt_le_trans _ _ (modulus n + modulus n * z)%R).
-  by rewrite ltr_add2r urepr_ltmod.
-rewrite -[X in (X + _ <= _)%R]mulr1 -mulrDr ler_wpmul2l //.
+  by rewrite ltrD2r urepr_ltmod.
+rewrite -[X in (X + _ <= _)%R]mulr1 -mulrDr ler_wpM2l //.
 by rewrite -(rwP lezP) -addZE Z.add_1_l; apply/Zlt_le_succ/ltzP.
 Qed.
 
