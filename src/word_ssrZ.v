@@ -23,7 +23,7 @@
 (* -------------------------------------------------------------------- *)
 From HB Require Import structures.
 From mathcomp Require Import all_ssreflect all_algebra.
-(* ------- *) Require Import Arith ZArith.
+From Coq Require Import Arith ZArith.
 
 Set Implicit Arguments.
 Unset Strict Implicit.
@@ -296,7 +296,7 @@ case: x y => [|x|x] [|y|y] //=; try by constructor.
 + by rewrite (eqP (xchooseP (h y))); constructor.
 + by rewrite oppr_le0; constructor.
 + by rewrite (eqP (xchooseP (h x))); constructor.
-+ rewrite ler_oppr opprK; apply: (iffP idP).
++ rewrite lerNr opprK; apply: (iffP idP).
   - by move/leP/Pos2Nat.inj_le/Pos2Z.neg_le_neg.
   rewrite -!Pos2Z.opp_pos -Z.opp_le_mono => {}h.
   by rewrite lez_nat -(rwP leP) -Pos2Nat.inj_le.
@@ -319,7 +319,7 @@ Lemma divZE (a b : Z) : (0 < b)%R -> a / b = (a %/ b)%I.
 Proof.
 move/ltzP/(@ltZE 0) => h; have /(congr1 int_to_Z) := divz_eq a b.
 rewrite mulrC !rmorph /= !Z_to_intK => /Zdiv_unique -> //.
-rewrite !lteZE !rmorph /= !int_to_ZK subr_ge0 ltr_subl_addr.
+rewrite !lteZE !rmorph /= !int_to_ZK subr_ge0 ltrBlDr.
 rewrite (rwP andP) lez_floor ?gt_eqF //=.
 by rewrite addrC -[X in (_ + X)%R]mul1r -mulrDl ltz_ceil.
 Qed.
