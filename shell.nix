@@ -1,7 +1,7 @@
 with import <nixpkgs> {};
 
 let
-  coqPackages = coqPackages_8_17;
+  coqPackages = coqPackages_8_18;
   mathcomp = coqPackages.mathcomp;
 in
 
