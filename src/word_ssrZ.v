@@ -22,7 +22,7 @@
 
 (* -------------------------------------------------------------------- *)
 From HB Require Import structures.
-From mathcomp Require Import all_ssreflect all_algebra.
+From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv.
 From Coq Require Import Arith ZArith.
 
 Set Implicit Arguments.
