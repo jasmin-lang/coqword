@@ -21,8 +21,8 @@
 (* SOFTWARE.                                                            *)
 
 (* -------------------------------------------------------------------- *)
-From mathcomp Require Import all_ssreflect all_algebra.
-(* ------- *) Require Import Arith ZArith.
+From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv.
+From Coq Require Import Arith ZArith.
 
 Set Implicit Arguments.
 Unset Strict Implicit.

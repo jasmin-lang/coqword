@@ -21,9 +21,9 @@
 (* SOFTWARE.                                                            *)
 
 (* -------------------------------------------------------------------- *)
-From mathcomp Require Import all_ssreflect all_algebra zmodp.
-(* ------- *) Require Import Arith ZArith word_ssrZ.
-Require Psatz.
+From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv zmodp.
+From Coq Require Import Arith ZArith Lia.
+Require Import word_ssrZ.
 
 (* -------------------------------------------------------------------- *)
 Set   Implicit Arguments.
@@ -1083,8 +1083,8 @@ have Hn : (0 < 2 ^ Z.of_nat n)%Z.
 replace (-1 mod 2 ^ Z.of_nat n)%Z with (Z.ones (Z.of_nat n)); first last.
 + rewrite Z.ones_equiv; elim_div => ?; cut (z = -1)%Z; Lia.nia.
 case: ssrnat.ltP => h.
-+ apply: Z.ones_spec_low; Psatz.lia.
-apply: Z.ones_spec_high; Psatz.lia.
++ apply: Z.ones_spec_low; lia.
+apply: Z.ones_spec_high; lia.
 Qed.
 
 End WordLogicals.
@@ -1345,7 +1345,7 @@ move: {w w' s s' eq_size} (urepr w) (urepr w') (wcat_r s) (wcat_r s') (2%:R ^+ (
 rewrite /GRing.zero /GRing.add /GRing.mul /=.
 do 4 case/andP => /leZP ? /ltZP ?.
 move => h.
-cut (a = a'); Psatz.nia.
+cut (a = a'); nia.
 Qed.
 
 Definition wcat {p} (s : p.-tuple n.-word) :=
