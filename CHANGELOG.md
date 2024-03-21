@@ -1,5 +1,11 @@
 # Changelog
 
+## [v2.3] — 2024-03-21
+
+### Added
+
+  - Explicit support for mathcomp 1.19 and Coq 8.19
+
 ## [v3.0] — 2023-11-22
 
 ### Added
