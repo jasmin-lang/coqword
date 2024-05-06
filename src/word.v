@@ -1110,6 +1110,17 @@ Proof. by apply/eqP/eq_from_wbit => i. Qed.
 End WordLogicalsTh.
 
 (* ==================================================================== *)
+Definition shiftr_nat (a: Z) (n: nat) : Z :=
+  Nat.iter n Z.div2 a.
+
+Lemma shiftr_natE a n : shiftr_nat a n = Z.shiftr a (Z.of_nat n).
+Proof.
+rewrite /Z.shiftr /Z.shiftl.
+case: n => // n /=.
+elim: n => // n /= ->.
+by rewrite Pos.iter_succ.
+Qed.
+
 Lemma Zshiftr_range a n : (0 <= a -> 0 <= Z.shiftr a (Z.of_nat n) <= a)%Z.
 Proof.
 rewrite /Z.shiftr => ha; case: n => /=; first lia.
@@ -1121,7 +1132,18 @@ Section WordShift.
 Context (n : nat).
 
 Definition lsl (w : n.-word) k := mkword n (Z.shiftl (urepr w) (Z.of_nat k)).
-Definition lsr (w : n.-word) k := mkword n (Z.shiftr (urepr w) (Z.of_nat k)).
+
+Lemma lsr_proof (w : n.-word) k : (0 <= shiftr_nat (urepr w) k < modulus n)%R.
+Proof.
+rewrite shiftr_natE.
+have := urepr_isword w.
+rewrite -!(rwP andP) -!(rwP lezP, rwP ltzP) => - [] w_ge0.
+have := Zshiftr_range k w_ge0.
+intuition lia.
+Qed.
+
+Definition lsr (w : n.-word) k := mkWord (lsr_proof w k).
+
 Definition asr (w : n.-word) k := mkword n (Z.shiftr (srepr w) (Z.of_nat k)).
 
 Notation asl := lsl (only parsing).
@@ -1147,10 +1169,7 @@ Qed.
 
 Lemma urepr_lsr (w: n.-word) k :
   urepr (lsr w k) = Z.shiftr (urepr w) (Z.of_nat k).
-Proof.
-apply: Zmod_small.
-case/andP: (urepr_isword w) => /lezP /Zshiftr_range - /(_ k) h /ltzP; lia.
-Qed.
+Proof. by rewrite -shiftr_natE. Qed.
 
 Lemma lsrE (w : n.-word) k :
   lsr w k = t2w [tuple wbit w (i + k) | i < n].
