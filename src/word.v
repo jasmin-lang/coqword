@@ -22,7 +22,8 @@
 
 (* -------------------------------------------------------------------- *)
 From HB Require Import structures.
-From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv zmodp.
+From mathcomp Require Import ssreflect ssrbool ssrfun eqtype ssrnat seq choice div fintype tuple bigop prime order.
+From mathcomp Require Import ssralg ssrnum ssrint intdiv zmodp.
 From Coq Require Import Arith ZArith Lia.
 Require Import word_ssrZ.
 
