@@ -1110,6 +1110,13 @@ Proof. by apply/eqP/eq_from_wbit => i. Qed.
 End WordLogicalsTh.
 
 (* ==================================================================== *)
+Lemma Zshiftr_range a n : (0 <= a -> 0 <= Z.shiftr a (Z.of_nat n) <= a)%Z.
+Proof.
+rewrite /Z.shiftr => ha; case: n => /=; first lia.
+elim => [ | n ]; rewrite /= ?Pos.iter_succ Z.div2_div; elim_div; lia.
+Qed.
+
+(* ==================================================================== *)
 Section WordShift.
 Context (n : nat).
 
@@ -1138,13 +1145,19 @@ case: leqP => /= => [le_ki|lt_ik].
 + by rewrite Z.testbit_neg_r // Z.lt_sub_0; apply/inj_lt/ssrnat.ltP.
 Qed.
 
+Lemma urepr_lsr (w: n.-word) k :
+  urepr (lsr w k) = Z.shiftr (urepr w) (Z.of_nat k).
+Proof.
+apply: Zmod_small.
+case/andP: (urepr_isword w) => /lezP /Zshiftr_range - /(_ k) h /ltzP; lia.
+Qed.
+
 Lemma lsrE (w : n.-word) k :
   lsr w k = t2w [tuple wbit w (i + k) | i < n].
 Proof.
 apply/eqP/eq_from_wbit => i; rewrite [in RHS]wbit_t2wE.
 rewrite -tnth_nth tnth_map tnth_ord_tuple.
-rewrite /lsr mkword_valK wbit_mod2Xn ?{1}/wbit //.
-+ by apply/leZP; rewrite Z.shiftr_nonneg.
+rewrite -urepr_word urepr_lsr {1}/wbit.
 rewrite Z.shiftr_spec; first by apply/Zle_0_nat.
 by rewrite addZE -Nat2Z.n2zD -/(wbit _ _).
 Qed.
