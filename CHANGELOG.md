@@ -1,5 +1,15 @@
 # Changelog
 
+## [v3.2] — 2024-05-31
+
+### Changed
+
+  - The implementation of `lsr` is more efficient
+
+### Added
+
+  - Lemma `urepr_lsr` specifies the `lsr` operation
+
 ## [v3.1] — 2024-03-21
 
 ### Added
