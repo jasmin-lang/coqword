@@ -51,13 +51,6 @@ Qed.
 End PosInd.
 
 (* -------------------------------------------------------------------- *)
-Lemma addP m n : (m + n)%coq_nat = (m + n)%nat.
-Proof. by []. Qed.
-
-Lemma mulP m n : (m * n)%coq_nat = (m * n)%nat.
-Proof. by []. Qed.
-
-(* -------------------------------------------------------------------- *)
 Definition int_to_Z (z : int) : Z :=
   match z with
   | Posz n =>  (Z.of_nat n   )
@@ -244,10 +237,10 @@ Proof.
 split=> // -[|x|x] y /=; first by rewrite mul0r.
 - elim/posind: x => [|p ih]; first by rewrite !mul1r.
   rewrite Pos2Z.inj_add addZE mulrDl mul1r raddfD /=.
-  by rewrite ih Pos2Nat.inj_add /= addP PoszD mulrDl mul1r.
+  by rewrite ih Pos2Nat.inj_add /= PoszD mulrDl mul1r.
 - elim/posind: x => [|p ih]; first by rewrite !mulN1r raddfN.
   rewrite -Pos2Z.add_neg_neg addZE mulrDl mulN1r.
-  rewrite raddfB /= ih Pos2Nat.inj_add addP PoszD.
+  rewrite raddfB /= ih Pos2Nat.inj_add PoszD.
   by rewrite opprD mulrDl mulN1r.
 Qed.
 
