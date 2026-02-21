@@ -20,9 +20,10 @@ jobs:
         -  mathcomp/mathcomp:2.3.0-coq-8.19
         -  mathcomp/mathcomp:2.2.0-coq-8.20
         -  mathcomp/mathcomp:2.3.0-coq-8.20
+        -  mathcomp/mathcomp:2.4.0-coq-8.20
       fail-fast: false
     steps:
-    - uses: actions/checkout@v5
+    - uses: actions/checkout@v6
     - uses: rocq-community/docker-coq-action@v1
       with:
         custom_image: ${{ matrix.image }}
