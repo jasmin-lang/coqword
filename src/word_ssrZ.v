@@ -427,3 +427,73 @@ move=> ge0_z; have : injective nat_of_bool by move=> [] [].
 apply; rewrite -modn2; apply/Nat2Z.inj; rewrite modnZE //.
 by rewrite Z2Nat.id ?(rwP lezP) // Zmod_odd; case: ifP.
 Qed.
+
+(* -------------------------------------------------------------------- *)
+(* Truncate a positive to its n least significant bits *)
+Fixpoint mod_pow2 (p: positive) (n: nat) {struct n} : N :=
+  (if n is n.+1 then
+     match p with
+     | p~0 => Pos.Ndouble (mod_pow2 p n)
+     | p~1 => Pos.Nsucc_double (mod_pow2 p n)
+     | 1 => 1%N
+     end%positive
+   else 0)%N.
+
+Definition zmod_pow2 (z: Z) (n: nat) : Z :=
+  match z with
+  | 0 => 0
+  | Zpos p => Z.of_N (mod_pow2 p n)
+  | Zneg p =>
+      match mod_pow2 p n with
+      | N0 => 0
+      | Npos p => two_power_nat n - Zpos p
+      end
+  end.
+
+Local Opaque Z.mul Z.sub.
+
+Lemma pos_mod_double p m :
+  (Npos p~0 mod Npos m~0 = 2 * (Npos p mod Npos m))%N.
+Proof.
+  apply: N2Z.inj.
+  by rewrite N2Z.inj_mul !N2Z.inj_mod /= (Pos2Z.inj_xO p) (Pos2Z.inj_xO m) Zmult_mod_distr_l.
+Qed.
+
+Lemma pos_mod_succ_double p m :
+  (Npos p~1 mod Npos m~0 = 2 * (Npos p mod Npos m) + 1)%N.
+Proof.
+  apply: N2Z.inj.
+  rewrite N2Z.inj_add N2Z.inj_mul !N2Z.inj_mod /= (Pos2Z.inj_xI p) (Pos2Z.inj_xO m).
+  rewrite Zplus_mod Z.mod_1_l. 2: Lia.lia.
+  rewrite Zmult_mod_distr_l.
+  apply: Z.mod_small.
+  have := Z.mod_pos_bound (Zpos p) (Zpos m).
+  Lia.lia.
+Qed.
+
+Lemma mod_pow2E p n :
+  (mod_pow2 p n = Npos p mod Npos (shift_nat n 1))%N.
+Proof.
+  elim: n p.
+  + by move => p; rewrite N.mod_1_r.
+    move => n ih [ p | p | ] /=; last by rewrite N.mod_1_l.
+  + rewrite pos_mod_succ_double -ih; Lia.lia.
+  rewrite pos_mod_double -ih; Lia.lia.
+Qed.
+
+Lemma zmod_pow2E z n :
+  zmod_pow2 z n = z mod 2 ^ Z.of_nat n.
+Proof.
+  case: z => [ // | p | p ] /=.
+  + by rewrite mod_pow2E N2Z.inj_mod /= shift_nat_correct Z.mul_1_r Zpower_nat_Z.
+ have ? : 2 ^ Z.of_nat n <> 0 by Lia.lia.
+  case: mod_pow2 (mod_pow2E p n) => [ | q ] /N2Z.inj_iff h.
+  + rewrite (Z.mod_opp_l_z (Zpos p)) //.
+    by move: h; rewrite N2Z.inj_mod /= shift_nat_correct Z.mul_1_r Zpower_nat_Z.
+  rewrite /two_power_nat.
+  move: h; rewrite N2Z.inj_mod /= shift_nat_correct Zpower_nat_Z Z.mul_1_r => h.
+  rewrite (Z.mod_opp_l_nz (Zpos p)) //; last Lia.lia.
+  by rewrite h.
+Qed.
+
+Global Opaque zmod_pow2.

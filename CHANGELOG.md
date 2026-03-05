@@ -2,6 +2,10 @@
 
 ## [Unreleased]
 
+### Changed
+
+  - The performance of `mkword` has been improved as it no longer uses Euclidean division.
+
 ### Added
 
   - Lemma `sub_wordE` relates `sub_word` to `add_word` and `opp_word`.
