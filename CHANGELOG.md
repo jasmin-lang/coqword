@@ -8,6 +8,7 @@
   - Lemma `mulwE` specifies the `mul_word` operation.
   - Lemmas `urepr_wand`, `urepr_wor`, and `urepr_wxor` specify the `wand`, `wor`
     and `wxor` operations, respectively.
+  - Support for mathcomp 2.3 – 2.5, Coq 8.20, and Rocq 9.0 – 9.1
 
 ## [v3.2] — 2024-05-31
 
