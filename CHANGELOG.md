@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+  - Lemma `sub_wordE` relates `sub_word` to `add_word` and `opp_word`.
+  - Lemma `mulwE` specifies the `mul_word` operation.
+  - Lemmas `urepr_wand`, `urepr_wor`, and `urepr_wxor` specify the `wand`, `wor`
+    and `wxor` operations, respectively.
+
 ## [v3.2] — 2024-05-31
 
 ### Changed

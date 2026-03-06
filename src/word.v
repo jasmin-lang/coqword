@@ -248,6 +248,13 @@ Definition sub_word (w1 w2 : n.-word) :=
 Definition opp_word (w : n.-word) :=
   mkword (- urepr w)%Z.
 
+Lemma sub_wordE (w1 w2 : n.-word) :
+  sub_word w1 w2 = add_word w1 (opp_word w2).
+Proof.
+  apply: val_inj.
+  by rewrite /= /opp_word mkwordK !urepr_word -Z.add_opp_r Zplus_mod_idemp_r.
+Qed.
+
 Definition mul_word (w1 w2 : n.-word) :=
   mkword (urepr w1 * urepr w2).
 
@@ -555,6 +562,10 @@ case: ltrP; rewrite (addr0, mulr1n); last first.
     by rewrite lerDr urepr_ge0.
   * by rewrite addZE -ltrBrDl opprB ltrDl subr_gt0.
 Qed.
+
+Lemma mulwE {n} (w1 w2 : n.-word) :
+  urepr (mul_word w1 w2)%R = ((urepr w1 * urepr w2)%R mod modulus n)%Z.
+Proof. by []. Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma word_sz_eq0 {n} (w : n.-word) : n = 0 -> w = 0%R.
@@ -1049,6 +1060,19 @@ Qed.
 Definition wand := nosimpl (fun w1 w2 => mkWord (wand_subproof w1 w2)).
 Definition wor  := nosimpl (fun w1 w2 => mkWord (wor_subproof  w1 w2)).
 Definition wxor := nosimpl (fun w1 w2 => mkWord (wxor_subproof w1 w2)).
+
+(* -------------------------------------------------------------------- *)
+Lemma urepr_wand (w1 w2 : n.-word) :
+  urepr (wand w1 w2) = Z.land (urepr w1) (urepr w2).
+Proof. done. Qed.
+
+Lemma urepr_wor (w1 w2 : n.-word) :
+  urepr (wor w1 w2) = Z.lor (urepr w1) (urepr w2).
+Proof. done. Qed.
+
+Lemma urepr_wxor (w1 w2 : n.-word) :
+  urepr (wxor w1 w2) = Z.lxor (urepr w1) (urepr w2).
+Proof. done. Qed.
 
 (* -------------------------------------------------------------------- *)
 Lemma wandE (w1 w2 : n.-word) i :
