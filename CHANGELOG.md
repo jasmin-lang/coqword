@@ -1,5 +1,11 @@
 # Changelog
 
+## [v3.4] — 2026-03-10
+
+### Changed
+
+  - Improved compatibility with mathcomp 2.5 regarding extraction to OCaml
+
 ## [v3.3] — 2026-03-06
 
 ### Changed
