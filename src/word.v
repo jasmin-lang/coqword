@@ -1148,11 +1148,42 @@ Proof. by apply/eqP/eq_from_wbit => i. Qed.
 End WordLogicalsTh.
 
 (* ==================================================================== *)
+Fixpoint pos_shiftr_nat (p: positive) (n: nat) {struct n} : Z :=
+  if n is n'.+1 then
+    match p with
+    | p'~1 | p'~0 => pos_shiftr_nat p' n'
+    | 1 => Z0
+    end%positive
+  else Zpos p.
+
+Lemma pos_shiftr_natE p n :
+  pos_shiftr_nat p n = (Z.pos p / 2 ^ Z.of_nat n)%Z.
+Proof.
+  elim: n p; first by move => ?; rewrite Z.div_1_r.
+  move => n ih [ p | p | ]; last first.
+  - by rewrite Z.div_1_l // -Z.pow_gt_1.
+  - rewrite Pos2Z.inj_xO Nat2Z.inj_succ Z.pow_succ_r; first exact: Nat2Z.is_nonneg.
+    rewrite Z.div_mul_cancel_l //; last by rewrite /= ih.
+    apply: Z.pow_nonzero => //; exact: Nat2Z.is_nonneg.
+  rewrite Pos2Z.inj_xI Nat2Z.inj_succ Z.pow_succ_r; first exact: Nat2Z.is_nonneg.
+  rewrite -Z.div_div //; first apply Z.pow_pos_nonneg => //; first exact: Nat2Z.is_nonneg.
+  by rewrite Z.mul_comm Z.div_add_l // /=.
+Qed.
+
 Definition shiftr_nat (a: Z) (n: nat) : Z :=
-  Nat.iter n Z.div2 a.
+  match a with
+  | Zpos p => pos_shiftr_nat p n
+  | Z0 => 0
+  | Zneg _ => Nat.iter n Z.div2 a
+  end.
 
 Lemma shiftr_natE a n : shiftr_nat a n = Z.shiftr a (Z.of_nat n).
 Proof.
+case: a.
+- by rewrite Z.shiftr_0_l.
+- move => p; rewrite Z.shiftr_div_pow2; first exact: Nat2Z.is_nonneg.
+- exact: pos_shiftr_natE.
+move => p.
 rewrite /Z.shiftr /Z.shiftl.
 case: n => // n /=.
 elim: n => // n /= ->.

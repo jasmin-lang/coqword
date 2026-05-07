@@ -1,5 +1,11 @@
 # Changelog
 
+## [unreleased]
+
+### Changed
+
+  - The implementation of `shiftr_nat` is more efficient
+
 ## [v3.4] — 2026-03-10
 
 ### Changed
