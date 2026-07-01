@@ -22,7 +22,8 @@
 
 (* -------------------------------------------------------------------- *)
 From HB Require Import structures.
-From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv.
+From mathcomp Require Import ssreflect ssrfun ssrbool eqtype ssrnat choice div bigop order.
+From mathcomp Require Import ssralg ssrnum ssrint intdiv.
 From Coq Require Import Arith ZArith.
 
 Set Implicit Arguments.
