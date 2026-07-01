@@ -25,10 +25,10 @@ From HB Require Import structures.
 From mathcomp Require Import all_ssreflect ssralg ssrnum ssrint intdiv.
 From Coq Require Import Arith ZArith.
 
-Set SsrOldRewriteGoalsOrder.  (* change Set to Unset when porting the file, then remove the line when requiring MathComp >= 2.6 *)
 Set Implicit Arguments.
 Unset Strict Implicit.
 Unset Printing Implicit Defensive.
+Unset SsrOldRewriteGoalsOrder.  (* remove the line when requiring MathComp >= 2.6 *)
 
 Local Open Scope ring_scope.
 Local Open Scope nat_scope.
@@ -282,9 +282,9 @@ Proof.
 have h z: exists n : nat, Pos.to_nat z == n.+1.
 - by case: (Pos2Nat.is_succ z)=> zS ->; exists zS.
 case: x y => [|x|x] [|y|y] //=; try by constructor.
-+ rewrite oppr_ge0 lez0_nat gtn_eqF; first by constructor.
++ rewrite oppr_ge0 lez0_nat gtn_eqF; last by constructor.
   by apply/ltP/Pos2Nat.is_pos.
-+ rewrite lez0_nat gtn_eqF; first by constructor.
++ rewrite lez0_nat gtn_eqF; last by constructor.
   by apply/ltP/Pos2Nat.is_pos.
 + by rewrite lez_nat; apply: (iffP leP) => /Pos2Nat.inj_le.
 + by rewrite (eqP (xchooseP (h y))); constructor.
@@ -320,7 +320,7 @@ Qed.
 
 Lemma modZE (a b : Z) : (0 < b)%R -> a mod b = (a %% b)%I.
 Proof.
-move=> gt0_b; rewrite /modz Zmod_eq_full; last first.
+move=> gt0_b; rewrite /modz Zmod_eq_full.
 + by apply/eqP; rewrite gt_eqF.
 + by rewrite rmorphB !rmorphM /= !Z_to_intK divZE.
 Qed.
@@ -329,7 +329,7 @@ Lemma divnZE (a b : nat) :
   b != 0%nat -> Z.of_nat (a %/ b) = (Z.of_nat a / Z.of_nat b)%Z.
 Proof.
 move=> nz_b; apply/(can_inj Z_to_intK); rewrite Z_to_int_of_natE.
-rewrite -divz_nat divZE; last by case: b nz_b.
+rewrite -divz_nat divZE; first by case: b nz_b.
 by rewrite int_to_ZK !Z_to_int_of_natE.
 Qed.
 
@@ -337,7 +337,7 @@ Lemma modnZE (a b : nat) :
   b != 0%nat -> Z.of_nat (a %% b) = (Z.of_nat a mod Z.of_nat b)%Z.
 Proof.
 move=> nz_b; apply/(can_inj Z_to_intK); rewrite Z_to_int_of_natE.
-rewrite -modz_nat modZE; last by case: b nz_b.
+rewrite -modz_nat modZE; first by case: b nz_b.
 by rewrite int_to_ZK !Z_to_int_of_natE.
 Qed.
 
@@ -464,7 +464,7 @@ Lemma pos_mod_succ_double p m :
 Proof.
   apply: N2Z.inj.
   rewrite N2Z.inj_add N2Z.inj_mul !N2Z.inj_mod /= (Pos2Z.inj_xI p) (Pos2Z.inj_xO m).
-  rewrite Zplus_mod Z.mod_1_l. 2: Lia.lia.
+  rewrite Zplus_mod Z.mod_1_l; first by Lia.lia.
   rewrite Zmult_mod_distr_l.
   apply: Z.mod_small.
   have := Z.mod_pos_bound (Zpos p) (Zpos m).
@@ -492,7 +492,7 @@ Proof.
     by move: h; rewrite N2Z.inj_mod /= shift_nat_correct Z.mul_1_r Zpower_nat_Z.
   rewrite /two_power_nat.
   move: h; rewrite N2Z.inj_mod /= shift_nat_correct Zpower_nat_Z Z.mul_1_r => h.
-  rewrite (Z.mod_opp_l_nz (Zpos p)) //; last Lia.lia.
+  rewrite (Z.mod_opp_l_nz (Zpos p)) //; first Lia.lia.
   by rewrite h.
 Qed.
 
