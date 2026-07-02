@@ -9,7 +9,8 @@ authors: ["Pierre-Yves Strub"]
 build: [ "dune" "build" "-p" name "-j" jobs ]
 depends: [
   "dune" {>= "2.8" & < "3.24"}
-  "coq" {>= "8.16"}
+  "coq-core" {>= "8.17"}
+  "coq-stdlib"
   "coq-mathcomp-ssreflect" {(>= "2.0" & < "2.6~")}
   "coq-mathcomp-algebra"
 ]
