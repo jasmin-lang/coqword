@@ -1,7 +1,16 @@
--arg -w -arg -ambiguous-paths
--arg -w -arg -notation-overridden
--arg -w -arg -redundant-canonical-projection
--arg -w -arg -projection-no-head-constant
+-arg "-w -ambiguous-paths"
 -arg "-w -hiding-delimiting-key"
+-arg "-w -notation-overridden"
+-arg "-w -redundant-canonical-projection"
+-arg "-w -projection-no-head-constant"
+# the 2 next lines can be handled when requiring Rocq >= 9.0
+-arg "-w -deprecated-from-Coq"
+-arg "-w -deprecated-dirpath-Coq"
+# the next line can be handled when requiring Coq >= 8.18
+-arg "-w -deprecated-since-mathcomp-2.3.0"
+-arg "-w -deprecated-since-mathcomp-2.4.0"
+-arg "-w -deprecated-since-mathcomp-2.5.0"
+# the next line can be handled when requiring Rocq >= 9.2
+-arg "-w -notation-for-abbreviation"
 
 -R _build/default/src mathcomp.word

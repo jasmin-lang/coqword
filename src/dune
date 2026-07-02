@@ -5,4 +5,13 @@
         -w -hiding-delimiting-key
         -w -notation-overridden
         -w -redundant-canonical-projection
-        -w -projection-no-head-constant))
+        -w -projection-no-head-constant
+        ; the 2 next lines can be handled when requiring Rocq >= 9.0
+        -w -deprecated-from-Coq
+        -w -deprecated-dirpath-Coq
+        ; the next line can be handled when requiring Coq >= 8.18
+        -w -deprecated-since-mathcomp-2.3.0
+        -w -deprecated-since-mathcomp-2.4.0
+        -w -deprecated-since-mathcomp-2.5.0
+        ; the next line can be handled when requiring Rocq >= 9.2
+        -w -notation-for-abbreviation))

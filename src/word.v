@@ -110,7 +110,7 @@ Proof. by rewrite !modulusE exprD. Qed.
 
 (* -------------------------------------------------------------------- *)
 Notation "n .-word" := (word n)
-  (at level 2, format "n .-word") : type_scope.
+  (at level 1, format "n .-word") : type_scope.
 
 (* -------------------------------------------------------------------- *)
 Section WordBaseTheory.
