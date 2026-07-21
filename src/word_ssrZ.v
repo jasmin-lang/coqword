@@ -89,7 +89,7 @@ HB.instance Definition _ := GRing.isZmodule.Build Z
   Z.add_assoc Z.add_comm Z.add_0_l Z.add_opp_diag_l.
 
 (* -------------------------------------------------------------------- *)
-HB.instance Definition _ := GRing.Zmodule_isComRing.Build Z
+HB.instance Definition _ := GRing.Zmodule_isComNzRing.Build Z
   Z.mul_assoc Z.mul_comm Z.mul_1_l Z.mul_add_distr_r (erefl true).
 
 (* -------------------------------------------------------------------- *)
@@ -111,7 +111,7 @@ Proof. by move/Z.mul_eq_0 => [] ->; rewrite eqxx ?orbT. Qed.
 
 End ZUnitRing.
 
-HB.instance Definition _ := GRing.ComRing_hasMulInverse.Build Z
+HB.instance Definition _ := GRing.ComNzRing_hasMulInverse.Build Z
   ZUnitRing.mulVZ ZUnitRing.unitZPl ZUnitRing.invZ_out.
 
 HB.instance Definition _ := GRing.ComUnitRing_isIntegral.Build Z

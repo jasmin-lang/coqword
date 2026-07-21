@@ -477,7 +477,7 @@ Lemma onew_neq0 : word1 != 0%R.
 Proof. by rewrite -val_eqE. Qed.
 
 (* -------------------------------------------------------------------- *)
-HB.instance Definition _ := GRing.Zmodule_isComRing.Build n.+1.-word
+HB.instance Definition _ := GRing.Zmodule_isComNzRing.Build n.+1.-word
   mulwA mulwC mul1w mulwDl onew_neq0.
 
 (* -------------------------------------------------------------------- *)
