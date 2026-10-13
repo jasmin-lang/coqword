@@ -8,6 +8,7 @@
 
 ### Removed
 
+  - Upper bound on the MathComp dependency
   - Support for mathcomp 2.0 — 2.3
   - Support for Coq 8.16 – 8.18
 
