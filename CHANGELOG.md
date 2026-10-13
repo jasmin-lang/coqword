@@ -4,7 +4,7 @@
 
 ### Added
 
-  - Explicit support for mathcomp 2.6 and Rocq 9.2
+  - Explicit support for mathcomp 2.6 and Rocq 9.3
 
 ### Removed
 
